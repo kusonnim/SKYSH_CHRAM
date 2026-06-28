@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useRef } from "react";
+"use client";
+
+import { useEffect, useRef } from "react";
 import {
   createChart,
   CrosshairMode,
   IChartApi,
   ISeriesApi,
-  UTCTimestamp,
   CandlestickData,
   HistogramData,
   CandlestickSeries,
   HistogramSeries,
+  Time,
 } from "lightweight-charts";
 import type { Candle } from "@/types";
 
@@ -17,6 +19,10 @@ type CandleChartProps = {
   selectedIndex: number | null;
   onSelectCandle: (index: number) => void;
 };
+
+function toChartTime(time: string): Time {
+  return time.includes("T") ? time.split("T")[0] : time;
+}
 
 export function CandleChart({
   candles,
@@ -28,18 +34,33 @@ export function CandleChart({
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
-  const timeToIndex = useMemo(() => {
-    return candles.reduce<Record<string, number>>((map, candle, index) => {
-      map[candle.time] = index;
-      return map;
-    }, {});
+  // Refs to hold latest handlers/state so the chart instance does not need to be recreated
+  const handlerRef = useRef<(index: number) => void>(() => {});
+  const timeToIndexRef = useRef<Record<string, number>>({});
+
+  // keep the latest onSelectCandle in a ref
+  useEffect(() => {
+    handlerRef.current = onSelectCandle;
+  }, [onSelectCandle]);
+
+  // update mapping from time -> index when candles change
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    candles.forEach((c, i) => {
+      map[String(toChartTime(c.time))] = i;
+    });
+    timeToIndexRef.current = map;
   }, [candles]);
 
+  // create chart once when container mounts
   useEffect(() => {
-    if (!chartContainer.current) return;
+    const container = chartContainer.current;
+    if (!container) return;
 
-    const chart = createChart(chartContainer.current, {
-      width: chartContainer.current.clientWidth,
+    const initialWidth = Math.max(container.clientWidth, 1);
+
+    const chart = createChart(container, {
+      width: initialWidth,
       height: 520,
       layout: {
         background: { color: "#ffffff" },
@@ -82,24 +103,38 @@ export function CandleChart({
     volumeSeriesRef.current = volumeSeries;
     chartRef.current = chart;
 
-    chart.subscribeClick((param) => {
-      const rawTime = param.time as UTCTimestamp | string | undefined;
-      if (!rawTime) return;
-      const time = String(rawTime);
-      const index = timeToIndex[time];
-      if (index !== undefined) {
-        onSelectCandle(index);
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const width = Math.floor(entry.contentRect.width);
+      if (width > 0) {
+        chart.applyOptions({ width, height: 520 });
+        chart.timeScale().fitContent();
       }
     });
 
+    resizeObserver.observe(container);
+
+    const clickHandler = (param: any) => {
+      const rawTime = param.time as Time | string | undefined;
+      if (!rawTime) return;
+      const time = String(rawTime);
+      const index = timeToIndexRef.current[time];
+      if (index !== undefined) {
+        handlerRef.current(index);
+      }
+    };
+
+    chart.subscribeClick(clickHandler);
+
     return () => {
+      resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
     };
-  }, [onSelectCandle, timeToIndex]);
+  }, []);
 
+  // update data when candles change
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
     const volumeSeries = volumeSeriesRef.current;
@@ -107,7 +142,7 @@ export function CandleChart({
     if (!candleSeries || !volumeSeries || !chart) return;
 
     const candleData: CandlestickData[] = candles.map((candle) => ({
-      time: candle.time,
+      time: toChartTime(candle.time),
       open: candle.open,
       high: candle.high,
       low: candle.low,
@@ -115,7 +150,7 @@ export function CandleChart({
     }));
 
     const volumeData: HistogramData[] = candles.map((candle) => ({
-      time: candle.time,
+      time: toChartTime(candle.time),
       value: candle.volume,
       color: candle.close >= candle.open ? "rgba(22, 163, 74, 0.35)" : "rgba(220, 38, 38, 0.35)",
     }));

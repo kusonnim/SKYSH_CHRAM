@@ -1,40 +1,51 @@
 import { NextResponse } from "next/server";
-import { gradeSelectCandleAnswer } from "@/domain/grading";
-import type { SubmitAnswerRequest } from "@/types";
+import { gradeSelectCandleAnswer, createBasicFeedback } from "@/domain";
+import type { SubmitAnswerRequest, AnswerResult } from "@/types";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as SubmitAnswerRequest;
+  try {
+    const body: SubmitAnswerRequest = await request.json();
+    const { selectedCandleIndex, correctCandleIndex } = body;
 
-  if (
-    typeof body.selectedCandleIndex !== "number" ||
-    typeof body.correctCandleIndex !== "number"
-  ) {
+    if (selectedCandleIndex === undefined || correctCandleIndex === undefined) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "selectedCandleIndex and correctCandleIndex are required.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+
+    // Grade the selected candle index
+    const gradingResult = gradeSelectCandleAnswer(selectedCandleIndex, correctCandleIndex);
+    
+    // Generate feedback message
+    const feedback = createBasicFeedback(gradingResult.isCorrect, gradingResult.mistakeCode);
+
+    const result: AnswerResult = {
+      isCorrect: gradingResult.isCorrect,
+      score: gradingResult.score,
+      feedback,
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+    });
+  } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
         error: {
-          code: "invalid_request",
-          message: "Missing or invalid answer payload.",
+          code: "SUBMIT_ANSWER_FAILED",
+          message: error.message || "Failed to grade answer",
         },
       },
-      { status: 400 },
+      { status: 500 },
     );
   }
-
-  const grading = gradeSelectCandleAnswer(
-    body.selectedCandleIndex,
-    body.correctCandleIndex,
-  );
-
-  return NextResponse.json({
-    success: true,
-    data: {
-      isCorrect: grading.isCorrect,
-      score: grading.score,
-      feedback: grading.isCorrect
-        ? "Great job! You correctly identified the highest-volume candle."
-        : "That candle is not the highest-volume candle. Compare the volume bars again.",
-    },
-  });
 }
-

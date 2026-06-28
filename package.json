@@ -5,11 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "test": "vitest run",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "latest",
+    "@upbit-official/upbit-sdk": "^0.9.0",
     "lightweight-charts": "latest",
     "next": "latest",
     "react": "latest",
@@ -25,6 +27,7 @@
     "eslint-config-next": "latest",
     "postcss": "latest",
     "tailwindcss": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "vitest": "^4.1.9"
   }
 }

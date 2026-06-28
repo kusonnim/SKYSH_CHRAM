@@ -1,7 +1,14 @@
 export function createBasicFeedback(
-  _isCorrect: boolean,
-  _mistakeCode: string | null,
+  isCorrect: boolean,
+  mistakeCode: string | null,
 ): string {
-  throw new Error("TODO: implement createBasicFeedback in the domain layer.");
-}
+  if (isCorrect) {
+    return "Great job! You correctly identified the highest-volume candle.";
+  }
 
+  if (mistakeCode === "invalid_selection") {
+    return "Please select one candle before submitting your answer.";
+  }
+
+  return "That candle is not the highest-volume candle. Compare the volume bars again.";
+}
