@@ -44,7 +44,7 @@ export function StageNode({ stage, index, totalStages }: StageNodeProps) {
     ? "mt-4 rounded-lg border border-white/20 bg-[#344e5d] px-6 py-2 text-white shadow-md"
     : "mt-3 rounded-full border border-[#c4c6d5]/40 bg-white px-4 py-1 shadow-sm";
 
-  const icon = isCompleted ? "✓" : isLocked ? "⌕" : "★";
+  const icon = isCompleted ? "OK" : isLocked ? "--" : String(index + 1);
 
   const content = (
     <>
@@ -52,7 +52,7 @@ export function StageNode({ stage, index, totalStages }: StageNodeProps) {
         className={`${shapeClassName} ${colorClassName} flex items-center justify-center border-4 border-white shadow-md transition-transform active:scale-95 ${isLocked ? "cursor-not-allowed" : "cursor-pointer shadow-xl"}`}
       >
         <span
-          className={`${isActive ? "text-5xl" : "text-4xl"} font-bold ${isLocked ? "text-[#434653]" : "text-white"}`}
+          className={`${isActive ? "text-3xl" : "text-2xl"} font-bold ${isLocked ? "text-[#434653]" : "text-white"}`}
         >
           {icon}
         </span>
@@ -77,4 +77,3 @@ export function StageNode({ stage, index, totalStages }: StageNodeProps) {
     </Link>
   );
 }
-

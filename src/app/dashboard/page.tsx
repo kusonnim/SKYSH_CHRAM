@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { LearningMap } from "@/components/learning";
 import { Header } from "@/components/auth";
+import { applyStoredProgress } from "@/lib/learning-progress";
 import type { LearningMap as LearningMapType } from "@/types";
 
 export default function DashboardPage() {
@@ -15,7 +16,7 @@ export default function DashboardPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          setLearningMap(data.data);
+          setLearningMap(applyStoredProgress(data.data));
         } else {
           throw new Error(data.error?.message ?? "Unable to load learning map.");
         }
@@ -61,18 +62,17 @@ export default function DashboardPage() {
           className="flex flex-col items-center justify-center rounded-lg bg-[#344e5d]/10 px-6 py-2 text-[#344e5d] active:scale-95"
           href="/dashboard"
         >
-          <span className="text-lg">◆</span>
+          <span className="text-lg font-bold">L</span>
           <span className="text-xs font-bold uppercase tracking-wide">Learn</span>
         </a>
         <a
           className="flex flex-col items-center justify-center px-6 py-2 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-95"
-          href="#"
+          href="/profile"
         >
-          <span className="text-lg">○</span>
+          <span className="text-lg font-bold">P</span>
           <span className="text-xs font-bold uppercase tracking-wide">Profile</span>
         </a>
       </nav>
     </div>
   );
 }
-

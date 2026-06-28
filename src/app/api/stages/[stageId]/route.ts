@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { staticLearningMap } from "@/content/curriculum";
 import { findStageById } from "@/domain";
 import { fetchUpbitCandles } from "@/server/upbit";
-import { sortCandlesOldestFirst, createMaxVolumeQuestion } from "@/domain";
+import {
+  createLongestBodyQuestion,
+  createMaxVolumeQuestion,
+  sortCandlesOldestFirst,
+} from "@/domain";
 
 type StageRouteContext = {
   params: Promise<{
@@ -35,7 +39,10 @@ export async function GET(_request: Request, context: StageRouteContext) {
     });
 
     const sortedCandles = sortCandlesOldestFirst(candles);
-    const question = createMaxVolumeQuestion(sortedCandles);
+    const question =
+      stage.id === "longest-body-candle"
+        ? createLongestBodyQuestion(sortedCandles)
+        : createMaxVolumeQuestion(sortedCandles);
 
     return NextResponse.json({
       success: true,

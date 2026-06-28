@@ -5,7 +5,7 @@ export function createFeedback(
 ): string {
   if (isCorrect) {
     if (stageId === "longest-body-candle") {
-      return "정답입니다! 몸통이 가장 긴 캔들을 정확히 찾으셨습니다.";
+      return "Correct. You found the candle with the strongest body.";
     }
     return "Great job! You correctly identified the highest-volume candle.";
   }
@@ -15,7 +15,7 @@ export function createFeedback(
   }
 
   if (stageId === "longest-body-candle") {
-    return "시가와 종가의 차이가 가장 큰 캔들을 찾아야 합니다.";
+    return "Not quite. Compare the distance between open and close again.";
   }
 
   return "That candle is not the highest-volume candle. Compare the volume bars again.";

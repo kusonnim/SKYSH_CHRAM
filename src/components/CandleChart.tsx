@@ -9,7 +9,6 @@ import {
   CandlestickData,
   HistogramData,
   Time,
-  SeriesMarker,
 } from "lightweight-charts";
 import type { Candle } from "@/types";
 
@@ -159,32 +158,6 @@ export function CandleChart({
     chart.timeScale().fitContent();
   }, [candles, selectedIndex]);
 
-  useEffect(() => {
-    const candleSeries = candleSeriesRef.current;
-    if (!candleSeries) return;
-
-    const markers: SeriesMarker<Time>[] = [];
-    if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
-      markers.push({
-        time: toChartTime(candles[selectedIndex].time),
-        position: "aboveBar",
-        color: "#ba1a1a",
-        shape: "arrowDown",
-        text: "Try again",
-      });
-    }
-    if (correctIndex != null && candles[correctIndex]) {
-      markers.push({
-        time: toChartTime(candles[correctIndex].time),
-        position: "belowBar",
-        color: "#00885d",
-        shape: "arrowUp",
-        text: "Correct",
-      });
-    }
-    candleSeries.setMarkers(markers);
-  }, [candles, selectedIndex, correctIndex, isWrong]);
-
   return (
     <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
@@ -199,6 +172,16 @@ export function CandleChart({
       <div className="overflow-hidden rounded-lg border border-[#c4c6d5]/30 bg-white">
         <div ref={chartContainer} className="h-[360px] w-full" />
       </div>
+      {(isWrong || correctIndex != null) && (
+        <div className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-[#434653]">
+          {isWrong && selectedIndex !== null
+            ? `Try again: Candle #${selectedIndex + 1} is not the answer.`
+            : null}
+          {correctIndex != null
+            ? ` Correct candle: #${correctIndex + 1}.`
+            : null}
+        </div>
+      )}
       <div className="mt-4 flex justify-center gap-4">
         <div className="flex items-center gap-1">
           <div className="h-2 w-2 rounded-full bg-[#00885d]" />
@@ -216,4 +199,3 @@ export function CandleChart({
     </section>
   );
 }
-

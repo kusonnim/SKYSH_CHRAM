@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   createFeedback,
+  createLongestBodyQuestion,
   createMaxVolumeQuestion,
+  findLongestBodyCandleIndex,
   findMaxVolumeCandleIndex,
   gradeSelectCandleAnswer,
   normalizeUpbitCandles,
   sortCandlesOldestFirst,
-  findLongestBodyCandleIndex,
-  createLongestBodyQuestion,
 } from "./index";
 import type { Candle } from "@/types";
 
@@ -162,7 +162,7 @@ describe("createLongestBodyQuestion", () => {
       stageId: "longest-body-candle",
       market: "KRW-BTC",
       timeframe: "day",
-      prompt: "가장 몸통이 긴 캔들을 선택하세요.",
+      prompt: "Select the candle with the largest body.",
       candles,
       answer: {
         correctIndex: 1,
@@ -218,13 +218,13 @@ describe("createFeedback", () => {
 
   it("returns stage-specific correct feedback for longest-body-candle", () => {
     expect(createFeedback(true, null, "longest-body-candle")).toBe(
-      "정답입니다! 몸통이 가장 긴 캔들을 정확히 찾으셨습니다.",
+      "Correct. You found the candle with the strongest body.",
     );
   });
 
   it("returns stage-specific wrong feedback for longest-body-candle", () => {
     expect(createFeedback(false, "wrong_candle", "longest-body-candle")).toBe(
-      "시가와 종가의 차이가 가장 큰 캔들을 찾아야 합니다.",
+      "Not quite. Compare the distance between open and close again.",
     );
   });
 });

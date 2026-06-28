@@ -34,14 +34,6 @@ export function ChapterSection({ chapter }: ChapterSectionProps) {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="mt-6 flex w-full rounded-lg bg-[#e2e2eb]/50 p-1">
-          <button className="flex-1 rounded-md bg-[#344e5d] px-4 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm">
-            Volume
-          </button>
-          <button className="flex-1 rounded-md px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#434653] transition-colors hover:bg-[#e2e2eb]">
-            Momentum
-          </button>
-        </div>
       </div>
 
       <div className="relative flex w-full flex-col items-center gap-12 py-8">
@@ -58,4 +50,3 @@ export function ChapterSection({ chapter }: ChapterSectionProps) {
     </section>
   );
 }
-

@@ -37,14 +37,13 @@ export const staticLearningMap: LearningMap = {
         {
           id: "longest-body-candle",
           chapterId: "momentum",
-          title: "장대양봉/음봉 찾기",
-          description: "매수세나 매도세가 가장 강했던, 몸통이 가장 긴 캔들을 찾아보세요.",
+          title: "Find the strongest candle body",
+          description: "Select the candle with the largest price body.",
           order: 1,
-          status: "available",
+          status: "locked",
           questionCount: 3,
         },
       ],
     },
   ],
 };
-

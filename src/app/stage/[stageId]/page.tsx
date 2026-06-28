@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CandleChart } from "@/components/chart";
 import { FeedbackBox } from "@/components/FeedbackBox";
+import { staticLearningMap } from "@/content/curriculum";
+import { markStageCompleted } from "@/lib/learning-progress";
 import type { AnswerResult, StageSession } from "@/types";
 
 export default function StagePage() {
@@ -20,6 +22,16 @@ export default function StagePage() {
   const router = useRouter();
 
   useEffect(() => {
+    if (!stageId) return;
+
+    setLoading(true);
+    setError(null);
+    setCurrentIndex(0);
+    setSelectedIndex(null);
+    setFeedback(null);
+    setStageCompleted(false);
+    setNextStageId(null);
+
     fetch(`/api/stages/${stageId}`)
       .then((res) => res.json())
       .then((data) => {
@@ -49,7 +61,7 @@ export default function StagePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          questionId: question.id,
+          questionId: question.stageId ?? question.id,
           selectedCandleIndex: selectedIndex,
           correctCandleIndex: question.answer.correctIndex,
         }),
@@ -57,12 +69,17 @@ export default function StagePage() {
 
       const data = await response.json();
       if (data.success) {
-        setFeedback(data.data);
+        if (data.data.isCorrect) {
+          await handleContinue();
+        } else {
+          setFeedback(data.data);
+        }
       } else {
-        console.error("Failed to submit answer:", data.error);
+        setError(data.error?.message ?? "Failed to submit answer.");
       }
     } catch (err) {
       console.error("Error submitting answer:", err);
+      setError("Failed to submit answer. Please try again.");
     }
   }
 
@@ -84,9 +101,17 @@ export default function StagePage() {
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.data?.nextStageId) {
-          setNextStageId(data.data.nextStageId);
+        const storedNextStageId = markStageCompleted(
+          staticLearningMap,
+          stageSession.stage.id,
+        );
+        const resolvedNextStageId = data.data?.nextStageId ?? storedNextStageId;
+        if (resolvedNextStageId) {
+          router.push(`/stage/${resolvedNextStageId}`);
+          return;
         }
+
+        setNextStageId(null);
         setStageCompleted(true);
       } else {
         router.push("/dashboard");
@@ -168,18 +193,18 @@ export default function StagePage() {
       <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[#c4c6d5]/40 bg-white px-4">
         <div className="flex items-center gap-3">
           <button
-            className="-ml-2 rounded-full p-2 text-[#1a1b22] transition-all active:bg-[#ededf7]"
+            className="-ml-2 rounded-full px-3 py-2 text-sm font-semibold text-[#1a1b22] transition-all active:bg-[#ededf7]"
             onClick={() => router.push("/dashboard")}
             type="button"
           >
-            ←
+            Back
           </button>
           <h1 className="text-lg font-bold uppercase tracking-tight text-[#344e5d]">
             SKYSH CHRAM
           </h1>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[#cbe6f9]/60 bg-[#cbe6f9]/20 px-3 py-1.5 text-[#344e5d]">
-          <span className="text-sm">◆</span>
+          <span className="text-sm font-bold">Q</span>
           <span className="text-xs font-semibold">{progressText}</span>
         </div>
       </header>
@@ -224,11 +249,11 @@ export default function StagePage() {
         </button>
         <nav className="flex w-full max-w-sm justify-around pt-2">
           <a className="flex flex-col items-center gap-1 text-[#344e5d]" href="/dashboard">
-            <span className="text-lg">◆</span>
+            <span className="text-lg font-bold">L</span>
             <span className="text-[10px] font-bold uppercase">Learn</span>
           </a>
-          <a className="flex flex-col items-center gap-1 text-[#747685]" href="#">
-            <span className="text-lg">○</span>
+          <a className="flex flex-col items-center gap-1 text-[#747685]" href="/profile">
+            <span className="text-lg font-bold">P</span>
             <span className="text-[10px] font-bold uppercase">Profile</span>
           </a>
         </nav>
@@ -236,4 +261,3 @@ export default function StagePage() {
     </div>
   );
 }
-
