@@ -52,7 +52,7 @@ describe("normalizeUpbitCandles", () => {
       ]),
     ).toEqual([
       {
-        time: "2026-06-01T09:00:00",
+        time: "2026-06-01",
         open: 100,
         high: 120,
         low: 90,
@@ -92,7 +92,7 @@ describe("normalizeUpbitCandles", () => {
       ]),
     ).toEqual([
       {
-        time: "2026-06-01T09:00:00",
+        time: "2026-06-01",
         open: 100,
         high: 120,
         low: 90,

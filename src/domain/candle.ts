@@ -35,8 +35,8 @@ export function normalizeUpbitCandles(rawCandles: unknown[]): Candle[] {
         isNumeric(rawCandle.candle_acc_trade_volume),
     )
     .map((rawCandle) => ({
-      time: (rawCandle.candle_date_time_kst ??
-        rawCandle.candle_date_time_utc) as string,
+      time: ((rawCandle.candle_date_time_kst ??
+        rawCandle.candle_date_time_utc) as string).split("T")[0],
       open: Number(rawCandle.opening_price),
       high: Number(rawCandle.high_price),
       low: Number(rawCandle.low_price),
