@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   createChart,
   CrosshairMode,
@@ -34,13 +34,25 @@ export function CandleChart({
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
-  const timeToIndex = useMemo(() => {
-    return candles.reduce<Record<string, number>>((map, candle, index) => {
-      map[String(toChartTime(candle.time))] = index;
-      return map;
-    }, {});
+  // Refs to hold latest handlers/state so the chart instance does not need to be recreated
+  const handlerRef = useRef<(index: number) => void>(() => {});
+  const timeToIndexRef = useRef<Record<string, number>>({});
+
+  // keep the latest onSelectCandle in a ref
+  useEffect(() => {
+    handlerRef.current = onSelectCandle;
+  }, [onSelectCandle]);
+
+  // update mapping from time -> index when candles change
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    candles.forEach((c, i) => {
+      map[String(toChartTime(c.time))] = i;
+    });
+    timeToIndexRef.current = map;
   }, [candles]);
 
+  // create chart once when container mounts
   useEffect(() => {
     const container = chartContainer.current;
     if (!container) return;
@@ -101,15 +113,17 @@ export function CandleChart({
 
     resizeObserver.observe(container);
 
-    chart.subscribeClick((param) => {
-      const rawTime = param.time;
+    const clickHandler = (param: any) => {
+      const rawTime = param.time as Time | string | undefined;
       if (!rawTime) return;
       const time = String(rawTime);
-      const index = timeToIndex[time];
+      const index = timeToIndexRef.current[time];
       if (index !== undefined) {
-        onSelectCandle(index);
+        handlerRef.current(index);
       }
-    });
+    };
+
+    chart.subscribeClick(clickHandler);
 
     return () => {
       resizeObserver.disconnect();
@@ -118,8 +132,9 @@ export function CandleChart({
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
     };
-  }, [onSelectCandle, timeToIndex]);
+  }, []);
 
+  // update data when candles change
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
     const volumeSeries = volumeSeriesRef.current;
