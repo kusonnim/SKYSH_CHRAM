@@ -8,9 +8,8 @@ import {
   ISeriesApi,
   CandlestickData,
   HistogramData,
-  CandlestickSeries,
-  HistogramSeries,
   Time,
+  SeriesMarker,
 } from "lightweight-charts";
 import type { Candle } from "@/types";
 
@@ -18,6 +17,8 @@ type CandleChartProps = {
   candles: Candle[];
   selectedIndex: number | null;
   onSelectCandle: (index: number) => void;
+  correctIndex?: number | null;
+  isWrong?: boolean;
 };
 
 function toChartTime(time: string): Time {
@@ -28,6 +29,8 @@ export function CandleChart({
   candles,
   selectedIndex,
   onSelectCandle,
+  correctIndex,
+  isWrong,
 }: CandleChartProps) {
   const chartContainer = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -85,7 +88,7 @@ export function CandleChart({
       },
     });
 
-    const candleSeries = chart.addSeries(CandlestickSeries, {
+    const candleSeries = chart.addCandlestickSeries({
       upColor: "#16a34a",
       downColor: "#dc2626",
       borderVisible: false,
@@ -93,7 +96,7 @@ export function CandleChart({
       wickDownColor: "#dc2626",
     });
 
-    const volumeSeries = chart.addSeries(HistogramSeries, {
+    const volumeSeries = chart.addHistogramSeries({
       priceFormat: {
         type: "volume",
       },
@@ -161,6 +164,32 @@ export function CandleChart({
     volumeSeries.setData(volumeData);
     chart.timeScale().fitContent();
   }, [candles]);
+
+  useEffect(() => {
+    const candleSeries = candleSeriesRef.current;
+    if (!candleSeries) return;
+
+    const markers: SeriesMarker<Time>[] = [];
+    if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
+      markers.push({
+        time: toChartTime(candles[selectedIndex].time),
+        position: 'aboveBar',
+        color: '#dc2626',
+        shape: 'arrowDown',
+        text: '오답',
+      });
+    }
+    if (correctIndex != null && candles[correctIndex]) {
+      markers.push({
+        time: toChartTime(candles[correctIndex].time),
+        position: 'belowBar',
+        color: '#16a34a',
+        shape: 'arrowUp',
+        text: '정답',
+      });
+    }
+    candleSeries.setMarkers(markers);
+  }, [candles, selectedIndex, correctIndex, isWrong]);
 
   return (
     <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">

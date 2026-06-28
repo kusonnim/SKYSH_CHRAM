@@ -13,7 +13,7 @@
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "latest",
     "@upbit-official/upbit-sdk": "^0.9.0",
-    "lightweight-charts": "latest",
+    "lightweight-charts": "^4.2.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"

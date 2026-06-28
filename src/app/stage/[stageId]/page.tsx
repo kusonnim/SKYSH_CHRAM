@@ -11,10 +11,13 @@ export default function StagePage() {
   const params = useParams();
   const stageId = params?.stageId;
   const [stageSession, setStageSession] = useState<StageSession | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<AnswerResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [stageCompleted, setStageCompleted] = useState(false);
+  const [nextStageId, setNextStageId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function StagePage() {
   async function handleSubmit() {
     if (!stageSession || selectedIndex === null) return;
 
-    const question = stageSession.questions[0];
+    const question = stageSession.questions[currentIndex];
     if (!question.answer) return;
 
     try {
@@ -66,6 +69,14 @@ export default function StagePage() {
 
   async function handleContinue() {
     if (!stageSession) return;
+
+    if (currentIndex < stageSession.questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      setSelectedIndex(null);
+      setFeedback(null);
+      return;
+    }
+
     try {
       const response = await fetch("/api/progress/stage-complete", {
         method: "POST",
@@ -73,7 +84,11 @@ export default function StagePage() {
         body: JSON.stringify({ stageId: stageSession.stage.id }),
       });
       if (response.ok) {
-        router.push("/dashboard");
+        const data = await response.json();
+        if (data.data?.nextStageId) {
+          setNextStageId(data.data.nextStageId);
+        }
+        setStageCompleted(true);
       } else {
         console.error("Failed to complete stage");
         router.push("/dashboard");
@@ -112,17 +127,46 @@ export default function StagePage() {
     );
   }
 
-  const question = stageSession.questions[0];
+  if (stageCompleted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm text-center">
+          <h2 className="text-2xl font-bold text-slate-900">스테이지 클리어! 🎉</h2>
+          <p className="mt-2 text-slate-600">축하합니다! 모든 문제를 성공적으로 풀었습니다.</p>
+          <div className="mt-8 flex justify-center gap-4">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="rounded border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
+            >
+              대시보드로 돌아가기
+            </button>
+            {nextStageId && (
+              <button
+                onClick={() => router.push(`/stage/${nextStageId}`)}
+                className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+              >
+                다음 스테이지 시작하기 →
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const question = stageSession.questions[currentIndex];
+  const isLastQuestion = currentIndex === stageSession.questions.length - 1;
+  const continueText = isLastQuestion ? "스테이지 완료하기" : "다음 문제";
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:space-y-0">
       <section className="space-y-6">
-        <div>
+        <div className="flex items-center">
           <button
             onClick={() => router.push("/dashboard")}
-            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+            className="text-sm font-medium text-slate-500 hover:text-slate-950 transition-colors flex items-center gap-2"
           >
-            ← 대시보드로 돌아가기
+            ← 나가기
           </button>
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -138,14 +182,15 @@ export default function StagePage() {
             setSelectedIndex(index);
             setFeedback(null);
           }}
+          isWrong={feedback != null && !feedback.isCorrect}
+          correctIndex={feedback != null ? question.answer?.correctIndex : null}
         />
       </section>
 
       <aside className="space-y-6">
         <QuestionPanel prompt={question.prompt} selectedIndex={selectedIndex} onSubmit={handleSubmit} />
-        <FeedbackBox result={feedback} onContinue={handleContinue} />
+        <FeedbackBox result={feedback} onContinue={handleContinue} continueText={continueText} />
       </aside>
     </main>
   );
 }
-
