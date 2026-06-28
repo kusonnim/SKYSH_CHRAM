@@ -5,6 +5,7 @@ export type FetchUpbitCandlesParams = {
   market: string;
   timeframe: string; // e.g. "day", "minute"
   count: number;
+  to?: string;
 };
 
 // Fallback: Call Upbit public REST API directly instead of using SDK.
@@ -12,13 +13,16 @@ export type FetchUpbitCandlesParams = {
 export async function fetchUpbitCandles(
   params: FetchUpbitCandlesParams,
 ): Promise<Candle[]> {
-  const { market, timeframe, count } = params;
+  const { market, timeframe, count, to } = params;
 
   const base = "https://api.upbit.com/v1/candles";
   const type = timeframe === "day" ? "days" : `${timeframe}s`;
-  const url = `${base}/${type}?market=${encodeURIComponent(market)}&count=${encodeURIComponent(
+  let url = `${base}/${type}?market=${encodeURIComponent(market)}&count=${encodeURIComponent(
     String(count),
   )}`;
+  if (to) {
+    url += `&to=${encodeURIComponent(to)}`;
+  }
 
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) {
