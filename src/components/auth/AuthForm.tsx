@@ -143,7 +143,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <span className="text-3xl font-bold text-white">C</span>
         </div>
         <h2 className="text-xl font-bold tracking-tight text-[#344e5d]">
-          SKYSH CHRAM
+          Chartine
         </h2>
       </div>
 
@@ -262,4 +262,3 @@ export function AuthForm({ mode }: AuthFormProps) {
     </div>
   );
 }
-
