@@ -28,6 +28,23 @@ export const staticLearningMap: LearningMap = {
         },
       ],
     },
+    {
+      id: "momentum",
+      title: "Momentum Reading",
+      description: "Learn how to analyze price momentum using candle bodies.",
+      order: 2,
+      stages: [
+        {
+          id: "longest-body-candle",
+          chapterId: "momentum",
+          title: "장대양봉/음봉 찾기",
+          description: "매수세나 매도세가 가장 강했던, 몸통이 가장 긴 캔들을 찾아보세요.",
+          order: 1,
+          status: "available",
+          questionCount: 3,
+        },
+      ],
+    },
   ],
 };
 

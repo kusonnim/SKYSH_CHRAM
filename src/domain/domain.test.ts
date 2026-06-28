@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
-  createBasicFeedback,
+  createFeedback,
   createMaxVolumeQuestion,
   findMaxVolumeCandleIndex,
   gradeSelectCandleAnswer,
   normalizeUpbitCandles,
   sortCandlesOldestFirst,
+  findLongestBodyCandleIndex,
+  createLongestBodyQuestion,
 } from "./index";
 import type { Candle } from "@/types";
 
@@ -21,9 +23,9 @@ const candles: Candle[] = [
   {
     time: "2026-06-01T00:00:00",
     open: 200,
-    high: 210,
+    high: 260,
     low: 190,
-    close: 205,
+    close: 250,
     volume: 500,
   },
   {
@@ -142,6 +144,33 @@ describe("createMaxVolumeQuestion", () => {
   });
 });
 
+describe("findLongestBodyCandleIndex", () => {
+  it("returns the index of the candle with the longest body", () => {
+    expect(findLongestBodyCandleIndex(candles)).toBe(1);
+  });
+
+  it("returns -1 for empty input", () => {
+    expect(findLongestBodyCandleIndex([])).toBe(-1);
+  });
+});
+
+describe("createLongestBodyQuestion", () => {
+  it("creates the longest body question with the correct answer index", () => {
+    expect(createLongestBodyQuestion(candles)).toEqual({
+      id: "longest-body-candle",
+      type: "select_candle",
+      stageId: "longest-body-candle",
+      market: "KRW-BTC",
+      timeframe: "day",
+      prompt: "가장 몸통이 긴 캔들을 선택하세요.",
+      candles,
+      answer: {
+        correctIndex: 1,
+      },
+    });
+  });
+});
+
 describe("gradeSelectCandleAnswer", () => {
   it("grades correct answers", () => {
     expect(gradeSelectCandleAnswer(1, 1)).toEqual({
@@ -168,22 +197,34 @@ describe("gradeSelectCandleAnswer", () => {
   });
 });
 
-describe("createBasicFeedback", () => {
+describe("createFeedback", () => {
   it("returns correct-answer feedback", () => {
-    expect(createBasicFeedback(true, null)).toBe(
+    expect(createFeedback(true, null)).toBe(
       "Great job! You correctly identified the highest-volume candle.",
     );
   });
 
   it("returns invalid-selection feedback", () => {
-    expect(createBasicFeedback(false, "invalid_selection")).toBe(
+    expect(createFeedback(false, "invalid_selection")).toBe(
       "Please select one candle before submitting your answer.",
     );
   });
 
   it("returns wrong-candle feedback by default", () => {
-    expect(createBasicFeedback(false, "wrong_candle")).toBe(
+    expect(createFeedback(false, "wrong_candle")).toBe(
       "That candle is not the highest-volume candle. Compare the volume bars again.",
+    );
+  });
+
+  it("returns stage-specific correct feedback for longest-body-candle", () => {
+    expect(createFeedback(true, null, "longest-body-candle")).toBe(
+      "정답입니다! 몸통이 가장 긴 캔들을 정확히 찾으셨습니다.",
+    );
+  });
+
+  it("returns stage-specific wrong feedback for longest-body-candle", () => {
+    expect(createFeedback(false, "wrong_candle", "longest-body-candle")).toBe(
+      "시가와 종가의 차이가 가장 큰 캔들을 찾아야 합니다.",
     );
   });
 });
