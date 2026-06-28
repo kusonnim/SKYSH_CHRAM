@@ -11,7 +11,9 @@ export async function middleware(request: NextRequest) {
     url.pathname === "/dashboard" ||
     url.pathname.startsWith("/dashboard/") ||
     url.pathname === "/stage" ||
-    url.pathname.startsWith("/stage/");
+    url.pathname.startsWith("/stage/") ||
+    url.pathname === "/profile" ||
+    url.pathname.startsWith("/profile/");
 
   if (isProtectedPage && !user) {
     url.pathname = "/login";
@@ -32,6 +34,8 @@ export const config = {
     "/dashboard/:path*",
     "/stage",
     "/stage/:path*",
+    "/profile",
+    "/profile/:path*",
     "/login",
     "/signup",
   ],
