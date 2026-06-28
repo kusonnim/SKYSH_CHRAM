@@ -1,58 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CandleChart } from "@/components/CandleChart";
-import { FeedbackBox } from "@/components/FeedbackBox";
-import { QuestionPanel } from "@/components/QuestionPanel";
-import type { Question, AnswerResult } from "@/types";
+import { useRouter } from "next/navigation";
+import { LearningMap } from "@/components/learning";
+import type { LearningMap as LearningMapType } from "@/types";
 
 export default function DashboardPage() {
-  const [question, setQuestion] = useState<Question | null>(null);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState<AnswerResult | null>(null);
+  const [learningMap, setLearningMap] = useState<LearningMapType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  // 1. Fetch today's question from the backend API
   useEffect(() => {
-    fetch("/api/questions/today")
+    fetch("/api/learning-map")
       .then((res) => res.json())
-      .then((resData) => {
-        if (resData.success) {
-          setQuestion(resData.data);
+      .then((data) => {
+        if (data.success) {
+          setLearningMap(data.data);
         } else {
-          console.error("Failed to load question:", resData.error);
+          throw new Error(data.error?.message ?? "Unable to load learning map.");
         }
       })
-      .catch((err) => console.error("Error fetching question:", err))
+      .catch((err) => {
+        console.error(err);
+        setError("Unable to load the learning map. Please try again.");
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  // 2. Submit the answer to the backend API
-  async function handleSubmit() {
-    if (selectedIndex === null || !question) return;
-
-    try {
-      const response = await fetch("/api/answers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          questionId: question.id,
-          selectedCandleIndex: selectedIndex,
-          correctCandleIndex: question.answer?.correctIndex,
-        }),
-      });
-
-      const resData = await response.json();
-      if (resData.success) {
-        setFeedback(resData.data);
-      } else {
-        console.error("Failed to submit answer:", resData.error);
-      }
-    } catch (err) {
-      console.error("Error submitting answer:", err);
-    }
+  function handleSelectStage(stageId: string) {
+    router.push(`/stage/${stageId}`);
   }
 
   if (loading) {
@@ -60,48 +37,40 @@ export default function DashboardPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-800 mx-auto"></div>
-          <p className="mt-4 text-sm text-slate-500">오늘의 차트 정보를 불러오는 중...</p>
+          <p className="mt-4 text-sm text-slate-500">Loading your learning map...</p>
         </div>
       </div>
     );
   }
 
-  if (!question) {
+  if (error || !learningMap) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-red-500">문제를 불러오지 못했습니다. 서버 상태를 확인해 주세요.</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm text-center">
+          <p className="text-sm font-semibold text-red-600">{error ?? "Failed to load the learning map."}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:space-y-0">
-      <section className="space-y-6">
-        <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-semibold text-slate-950">Dashboard</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Select the candle with the highest trading volume and submit your answer.
-          </p>
+    <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8">
+      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Learning Path</p>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-950">Dashboard</h1>
+          </div>
+          <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+            Real BTC volume lessons
+          </div>
         </div>
-
-        <CandleChart
-          candles={question.candles}
-          selectedIndex={selectedIndex}
-          onSelectCandle={(index) => {
-            setSelectedIndex(index);
-            setFeedback(null); // Reset feedback when selecting a new candle
-          }}
-        />
+        <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600">
+          Select a stage below to open a chart-based question and build your candle-reading skills.
+        </p>
       </section>
 
-      <aside className="space-y-6">
-        <QuestionPanel
-          prompt={question.prompt}
-          selectedIndex={selectedIndex}
-          onSubmit={handleSubmit}
-        />
-        <FeedbackBox result={feedback} />
-      </aside>
+      <LearningMap chapters={learningMap.chapters} onSelectStage={handleSelectStage} />
     </main>
   );
 }
