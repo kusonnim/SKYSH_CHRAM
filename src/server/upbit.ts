@@ -32,3 +32,19 @@ export async function fetchUpbitCandles(
   const raw = await res.json();
   return normalizeUpbitCandles(Array.isArray(raw) ? raw : []);
 }
+
+export async function fetchUpbitTicker(market: string): Promise<number> {
+  const url = `https://api.upbit.com/v1/ticker?markets=${encodeURIComponent(market)}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) {
+    throw new Error(`Upbit Ticker API returned ${res.status}`);
+  }
+
+  const raw = await res.json();
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new Error("No ticker data returned from Upbit");
+  }
+
+  return raw[0].trade_price;
+}
+
