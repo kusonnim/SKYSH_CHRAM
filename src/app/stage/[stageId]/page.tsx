@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { CandleChart } from "@/components/chart";
-import { QuestionPanel } from "@/components/QuestionPanel";
 import { FeedbackBox } from "@/components/FeedbackBox";
-import type { StageSession, AnswerResult } from "@/types";
+import type { AnswerResult, StageSession } from "@/types";
 
 export default function StagePage() {
   const params = useParams();
@@ -90,7 +89,6 @@ export default function StagePage() {
         }
         setStageCompleted(true);
       } else {
-        console.error("Failed to complete stage");
         router.push("/dashboard");
       }
     } catch (err) {
@@ -101,10 +99,10 @@ export default function StagePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8ff]">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-800 mx-auto"></div>
-          <p className="mt-4 text-sm text-slate-500">Loading stage content...</p>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-[#c4c6d5] border-t-[#344e5d]" />
+          <p className="mt-4 text-sm text-[#434653]">Loading stage content...</p>
         </div>
       </div>
     );
@@ -112,13 +110,15 @@ export default function StagePage() {
 
   if (error || !stageSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm text-center">
-          <p className="text-sm font-semibold text-red-600">{error ?? "Stage not found."}</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6">
+        <div className="rounded-xl border border-[#c4c6d5] bg-white p-8 text-center shadow-sm">
+          <p className="text-sm font-semibold text-[#ba1a1a]">
+            {error ?? "Stage not found."}
+          </p>
           <button
-            type="button"
-            className="mt-4 rounded bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+            className="mt-4 rounded-lg bg-[#344e5d] px-4 py-2 text-sm font-semibold text-white"
             onClick={() => router.push("/dashboard")}
+            type="button"
           >
             Back to dashboard
           </button>
@@ -129,23 +129,27 @@ export default function StagePage() {
 
   if (stageCompleted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-sm text-center">
-          <h2 className="text-2xl font-bold text-slate-900">스테이지 클리어! 🎉</h2>
-          <p className="mt-2 text-slate-600">축하합니다! 모든 문제를 성공적으로 풀었습니다.</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6">
+        <div className="rounded-xl border border-[#c4c6d5] bg-white p-8 text-center shadow-sm">
+          <h2 className="text-2xl font-bold text-[#1a1b22]">Stage complete</h2>
+          <p className="mt-2 text-[#434653]">
+            Great work. You completed every question in this stage.
+          </p>
           <div className="mt-8 flex justify-center gap-4">
             <button
+              className="rounded-lg border border-[#c4c6d5] px-4 py-2 font-medium text-[#434653] hover:bg-[#ededf7]"
               onClick={() => router.push("/dashboard")}
-              className="rounded border border-slate-300 px-4 py-2 font-medium text-slate-700 hover:bg-slate-50"
+              type="button"
             >
-              대시보드로 돌아가기
+              Back to dashboard
             </button>
             {nextStageId && (
               <button
+                className="rounded-lg bg-[#344e5d] px-4 py-2 font-medium text-white hover:bg-[#4c6676]"
                 onClick={() => router.push(`/stage/${nextStageId}`)}
-                className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
+                type="button"
               >
-                다음 스테이지 시작하기 →
+                Start next stage
               </button>
             )}
           </div>
@@ -156,41 +160,80 @@ export default function StagePage() {
 
   const question = stageSession.questions[currentIndex];
   const isLastQuestion = currentIndex === stageSession.questions.length - 1;
-  const continueText = isLastQuestion ? "스테이지 완료하기" : "다음 문제";
+  const continueText = isLastQuestion ? "Complete stage" : "Next question";
+  const progressText = `${currentIndex + 1}/${stageSession.questions.length}`;
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:space-y-0">
-      <section className="space-y-6">
-        <div className="flex items-center">
+    <div className="min-h-screen bg-[#faf8ff] pb-40 text-[#1a1b22]">
+      <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[#c4c6d5]/40 bg-white px-4">
+        <div className="flex items-center gap-3">
           <button
+            className="-ml-2 rounded-full p-2 text-[#1a1b22] transition-all active:bg-[#ededf7]"
             onClick={() => router.push("/dashboard")}
-            className="text-sm font-medium text-slate-500 hover:text-slate-950 transition-colors flex items-center gap-2"
+            type="button"
           >
-            ← 나가기
+            ←
           </button>
+          <h1 className="text-lg font-bold uppercase tracking-tight text-[#344e5d]">
+            SKYSH CHRAM
+          </h1>
         </div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Stage</p>
-          <h1 className="mt-3 text-3xl font-semibold text-slate-950">{stageSession.stage.title}</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{stageSession.stage.description}</p>
+        <div className="flex items-center gap-2 rounded-full border border-[#cbe6f9]/60 bg-[#cbe6f9]/20 px-3 py-1.5 text-[#344e5d]">
+          <span className="text-sm">◆</span>
+          <span className="text-xs font-semibold">{progressText}</span>
         </div>
+      </header>
+
+      <main className="mx-auto max-w-lg space-y-6 px-4 pt-20">
+        <header className="space-y-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#344e5d]">
+            Stage {stageSession.stage.order.toString().padStart(2, "0")}
+          </p>
+          <h2 className="text-2xl font-bold text-[#1a1b22]">
+            {stageSession.stage.title}
+          </h2>
+          <p className="text-sm font-medium text-[#434653]">{question.prompt}</p>
+        </header>
 
         <CandleChart
           candles={question.candles}
-          selectedIndex={selectedIndex}
+          correctIndex={feedback != null ? question.answer?.correctIndex : null}
+          isWrong={feedback != null && !feedback.isCorrect}
           onSelectCandle={(index) => {
             setSelectedIndex(index);
             setFeedback(null);
           }}
-          isWrong={feedback != null && !feedback.isCorrect}
-          correctIndex={feedback != null ? question.answer?.correctIndex : null}
+          selectedIndex={selectedIndex}
         />
-      </section>
 
-      <aside className="space-y-6">
-        <QuestionPanel prompt={question.prompt} selectedIndex={selectedIndex} onSubmit={handleSubmit} />
-        <FeedbackBox result={feedback} onContinue={handleContinue} continueText={continueText} />
-      </aside>
-    </main>
+        <FeedbackBox
+          continueText={continueText}
+          onContinue={handleContinue}
+          result={feedback}
+        />
+      </main>
+
+      <footer className="fixed bottom-0 left-0 z-40 flex w-full flex-col items-center gap-4 border-t border-[#c4c6d5]/40 bg-white px-4 py-6">
+        <button
+          className="w-full max-w-md rounded-xl bg-[#344e5d] py-4 font-bold uppercase text-white shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-30"
+          disabled={selectedIndex === null || feedback !== null}
+          onClick={handleSubmit}
+          type="button"
+        >
+          Submit
+        </button>
+        <nav className="flex w-full max-w-sm justify-around pt-2">
+          <a className="flex flex-col items-center gap-1 text-[#344e5d]" href="/dashboard">
+            <span className="text-lg">◆</span>
+            <span className="text-[10px] font-bold uppercase">Learn</span>
+          </a>
+          <a className="flex flex-col items-center gap-1 text-[#747685]" href="#">
+            <span className="text-lg">○</span>
+            <span className="text-[10px] font-bold uppercase">Profile</span>
+          </a>
+        </nav>
+      </footer>
+    </div>
   );
 }
+

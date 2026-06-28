@@ -8,13 +8,13 @@ export function AuthRedirectLink({ mode }: AuthRedirectLinkProps) {
   const isLogin = mode === "login";
 
   return (
-    <p className="text-center text-sm text-slate-600">
+    <p className="text-center text-base text-[#434653]">
       {isLogin ? "Need an account?" : "Already have an account?"}{" "}
       <Link
-        className="font-medium text-slate-950 underline-offset-4 hover:underline"
+        className="font-semibold text-[#344e5d] underline-offset-4 transition-all hover:underline"
         href={isLogin ? "/signup" : "/login"}
       >
-        {isLogin ? "Sign up" : "Log in"}
+        {isLogin ? "Sign Up" : "Sign In"}
       </Link>
     </p>
   );

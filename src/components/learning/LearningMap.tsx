@@ -3,19 +3,18 @@ import { ChapterSection } from "./ChapterSection";
 
 type LearningMapProps = {
   chapters: Chapter[];
-  onSelectStage: (stageId: string) => void;
 };
 
-export function LearningMap({ chapters, onSelectStage }: LearningMapProps) {
+export function LearningMap({ chapters }: LearningMapProps) {
+  const activeChapter = chapters[0];
+
+  if (!activeChapter) {
+    return null;
+  }
+
   return (
-    <div className="space-y-6">
-      {chapters.map((chapter) => (
-        <ChapterSection
-          chapter={chapter}
-          key={chapter.id}
-          onSelectStage={onSelectStage}
-        />
-      ))}
+    <div className="w-full space-y-12">
+      <ChapterSection chapter={activeChapter} />
     </div>
   );
 }

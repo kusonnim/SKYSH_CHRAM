@@ -36,64 +36,57 @@ export function CandleChart({
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
-
-  // Refs to hold latest handlers/state so the chart instance does not need to be recreated
   const handlerRef = useRef<(index: number) => void>(() => {});
   const timeToIndexRef = useRef<Record<string, number>>({});
 
-  // keep the latest onSelectCandle in a ref
   useEffect(() => {
     handlerRef.current = onSelectCandle;
   }, [onSelectCandle]);
 
-  // update mapping from time -> index when candles change
   useEffect(() => {
     const map: Record<string, number> = {};
-    candles.forEach((c, i) => {
-      map[String(toChartTime(c.time))] = i;
+    candles.forEach((candle, index) => {
+      map[String(toChartTime(candle.time))] = index;
     });
     timeToIndexRef.current = map;
   }, [candles]);
 
-  // create chart once when container mounts
   useEffect(() => {
     const container = chartContainer.current;
     if (!container) return;
 
-    const initialWidth = Math.max(container.clientWidth, 1);
-
     const chart = createChart(container, {
-      width: initialWidth,
-      height: 520,
+      width: Math.max(container.clientWidth, 1),
+      height: 360,
       layout: {
         background: { color: "#ffffff" },
-        textColor: "#0f172a",
+        textColor: "#1a1b22",
       },
       grid: {
-        vertLines: { color: "#e2e8f0" },
-        horzLines: { color: "#e2e8f0" },
+        vertLines: { color: "#e4e1ed" },
+        horzLines: { color: "#e4e1ed" },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
       },
       rightPriceScale: {
-        borderColor: "#cbd5e1",
+        borderColor: "#c4c6d5",
       },
       timeScale: {
-        borderColor: "#cbd5e1",
-        timeVisible: true,
-        secondsVisible: false,
+        borderColor: "#c4c6d5",
         fixLeftEdge: true,
         fixRightEdge: true,
+        secondsVisible: false,
+        timeVisible: true,
       },
     });
 
     const candleSeries = chart.addCandlestickSeries({
-      upColor: "#16a34a",
-      downColor: "#dc2626",
+      upColor: "#00885d",
+      downColor: "#ba1a1a",
       borderVisible: false,
-      wickUpColor: "#16a34a",
-      wickDownColor: "#dc2626",
+      wickUpColor: "#00885d",
+      wickDownColor: "#ba1a1a",
     });
 
     const volumeSeries = chart.addHistogramSeries({
@@ -101,7 +94,7 @@ export function CandleChart({
         type: "volume",
       },
       priceScaleId: "volume",
-      color: "rgba(15, 23, 42, 0.2)",
+      color: "rgba(67, 70, 83, 0.2)",
     });
 
     candleSeriesRef.current = candleSeries;
@@ -111,24 +104,21 @@ export function CandleChart({
     const resizeObserver = new ResizeObserver(([entry]) => {
       const width = Math.floor(entry.contentRect.width);
       if (width > 0) {
-        chart.applyOptions({ width, height: 520 });
+        chart.applyOptions({ width, height: 360 });
         chart.timeScale().fitContent();
       }
     });
 
     resizeObserver.observe(container);
 
-    const clickHandler = (param: any) => {
+    chart.subscribeClick((param) => {
       const rawTime = param.time as Time | string | undefined;
       if (!rawTime) return;
-      const time = String(rawTime);
-      const index = timeToIndexRef.current[time];
+      const index = timeToIndexRef.current[String(rawTime)];
       if (index !== undefined) {
         handlerRef.current(index);
       }
-    };
-
-    chart.subscribeClick(clickHandler);
+    });
 
     return () => {
       resizeObserver.disconnect();
@@ -139,7 +129,6 @@ export function CandleChart({
     };
   }, []);
 
-  // update data when candles change
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
     const volumeSeries = volumeSeriesRef.current;
@@ -154,16 +143,21 @@ export function CandleChart({
       close: candle.close,
     }));
 
-    const volumeData: HistogramData[] = candles.map((candle) => ({
+    const volumeData: HistogramData[] = candles.map((candle, index) => ({
       time: toChartTime(candle.time),
       value: candle.volume,
-      color: candle.close >= candle.open ? "rgba(22, 163, 74, 0.35)" : "rgba(220, 38, 38, 0.35)",
+      color:
+        selectedIndex === index
+          ? "rgba(70, 72, 212, 0.85)"
+          : candle.close >= candle.open
+            ? "rgba(0, 136, 93, 0.28)"
+            : "rgba(186, 26, 26, 0.24)",
     }));
 
     candleSeries.setData(candleData);
     volumeSeries.setData(volumeData);
     chart.timeScale().fitContent();
-  }, [candles]);
+  }, [candles, selectedIndex]);
 
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
@@ -173,35 +167,53 @@ export function CandleChart({
     if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
       markers.push({
         time: toChartTime(candles[selectedIndex].time),
-        position: 'aboveBar',
-        color: '#dc2626',
-        shape: 'arrowDown',
-        text: '오답',
+        position: "aboveBar",
+        color: "#ba1a1a",
+        shape: "arrowDown",
+        text: "Try again",
       });
     }
     if (correctIndex != null && candles[correctIndex]) {
       markers.push({
         time: toChartTime(candles[correctIndex].time),
-        position: 'belowBar',
-        color: '#16a34a',
-        shape: 'arrowUp',
-        text: '정답',
+        position: "belowBar",
+        color: "#00885d",
+        shape: "arrowUp",
+        text: "Correct",
       });
     }
     candleSeries.setMarkers(markers);
   }, [candles, selectedIndex, correctIndex, isWrong]);
 
   return (
-    <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-        <div>
-          <h2 className="font-semibold text-slate-950">BTC Daily Chart</h2>
-          <p className="text-sm text-slate-500">Click a candle to select it.</p>
+    <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#1a1b22]">BTC Daily Chart</h3>
+        <div className="text-[10px] font-medium uppercase text-[#434653]">
+          Selected:{" "}
+          <span className="font-bold text-[#344e5d]">
+            {selectedIndex === null ? "none" : `Candle #${selectedIndex + 1}`}
+          </span>
         </div>
-        <span className="text-sm text-slate-500">Selected: {selectedIndex ?? "none"}</span>
       </div>
-      <div ref={chartContainer} className="mt-4 h-[520px] w-full" />
-    </div>
+      <div className="overflow-hidden rounded-lg border border-[#c4c6d5]/30 bg-white">
+        <div ref={chartContainer} className="h-[360px] w-full" />
+      </div>
+      <div className="mt-4 flex justify-center gap-4">
+        <div className="flex items-center gap-1">
+          <div className="h-2 w-2 rounded-full bg-[#00885d]" />
+          <span className="text-[10px] font-bold uppercase text-[#434653]">
+            Bullish
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="h-2 w-2 rounded-full bg-[#ba1a1a]" />
+          <span className="text-[10px] font-bold uppercase text-[#434653]">
+            Bearish
+          </span>
+        </div>
+      </div>
+    </section>
   );
 }
 
