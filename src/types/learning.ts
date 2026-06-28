@@ -6,7 +6,8 @@ export type StageSession = {
   questions: Question[];
 };
 
-export type StageCompletionResult = {
+export type StageCompleteResponse = {
   stageId: string;
   status: "completed";
+  nextStageId: string | null;
 };

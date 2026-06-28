@@ -373,7 +373,8 @@ Response:
   "success": true,
   "data": {
     "stageId": "volume-highest-candle",
-    "status": "completed"
+    "status": "completed",
+    "nextStageId": "volume-lowest-candle"
   }
 }
 ```
