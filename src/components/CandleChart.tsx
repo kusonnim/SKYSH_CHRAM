@@ -139,6 +139,14 @@ export function CandleChart({
       }
     };
 
+    const selectAtPointer = (event: PointerEvent) => {
+      if (!selectable) return;
+      const bounds = container.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const time = chart.timeScale().coordinateToTime(x);
+      selectTime(time as Time | string | undefined);
+    };
+
     chart.subscribeClick((param) => {
       selectTime(param.time as Time | string | undefined);
     });
@@ -148,15 +156,23 @@ export function CandleChart({
       selectTime(param.time as Time | string | undefined);
     });
 
-    const startSelecting = () => {
+    const startSelecting = (event: PointerEvent) => {
       if (!selectable) return;
+      event.preventDefault();
       isPointerSelectingRef.current = true;
+      selectAtPointer(event);
+    };
+    const moveSelecting = (event: PointerEvent) => {
+      if (!isPointerSelectingRef.current) return;
+      event.preventDefault();
+      selectAtPointer(event);
     };
     const stopSelecting = () => {
       isPointerSelectingRef.current = false;
     };
 
     container.addEventListener("pointerdown", startSelecting);
+    container.addEventListener("pointermove", moveSelecting);
     window.addEventListener("pointerup", stopSelecting);
     window.addEventListener("pointercancel", stopSelecting);
 
@@ -166,6 +182,7 @@ export function CandleChart({
 
     return () => {
       container.removeEventListener("pointerdown", startSelecting);
+      container.removeEventListener("pointermove", moveSelecting);
       window.removeEventListener("pointerup", stopSelecting);
       window.removeEventListener("pointercancel", stopSelecting);
       container.style.touchAction = "";
