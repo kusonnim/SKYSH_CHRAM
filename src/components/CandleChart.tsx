@@ -1,14 +1,16 @@
+"use client";
+
 import { useEffect, useMemo, useRef } from "react";
 import {
   createChart,
   CrosshairMode,
   IChartApi,
   ISeriesApi,
-  UTCTimestamp,
   CandlestickData,
   HistogramData,
   CandlestickSeries,
   HistogramSeries,
+  Time,
 } from "lightweight-charts";
 import type { Candle } from "@/types";
 
@@ -17,6 +19,10 @@ type CandleChartProps = {
   selectedIndex: number | null;
   onSelectCandle: (index: number) => void;
 };
+
+function toChartTime(time: string): Time {
+  return time.includes("T") ? time.split("T")[0] : time;
+}
 
 export function CandleChart({
   candles,
@@ -30,16 +36,19 @@ export function CandleChart({
 
   const timeToIndex = useMemo(() => {
     return candles.reduce<Record<string, number>>((map, candle, index) => {
-      map[candle.time] = index;
+      map[String(toChartTime(candle.time))] = index;
       return map;
     }, {});
   }, [candles]);
 
   useEffect(() => {
-    if (!chartContainer.current) return;
+    const container = chartContainer.current;
+    if (!container) return;
 
-    const chart = createChart(chartContainer.current, {
-      width: chartContainer.current.clientWidth,
+    const initialWidth = Math.max(container.clientWidth, 1);
+
+    const chart = createChart(container, {
+      width: initialWidth,
       height: 520,
       layout: {
         background: { color: "#ffffff" },
@@ -82,8 +91,18 @@ export function CandleChart({
     volumeSeriesRef.current = volumeSeries;
     chartRef.current = chart;
 
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      const width = Math.floor(entry.contentRect.width);
+      if (width > 0) {
+        chart.applyOptions({ width, height: 520 });
+        chart.timeScale().fitContent();
+      }
+    });
+
+    resizeObserver.observe(container);
+
     chart.subscribeClick((param) => {
-      const rawTime = param.time as UTCTimestamp | string | undefined;
+      const rawTime = param.time;
       if (!rawTime) return;
       const time = String(rawTime);
       const index = timeToIndex[time];
@@ -93,6 +112,7 @@ export function CandleChart({
     });
 
     return () => {
+      resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
@@ -107,7 +127,7 @@ export function CandleChart({
     if (!candleSeries || !volumeSeries || !chart) return;
 
     const candleData: CandlestickData[] = candles.map((candle) => ({
-      time: candle.time,
+      time: toChartTime(candle.time),
       open: candle.open,
       high: candle.high,
       low: candle.low,
@@ -115,7 +135,7 @@ export function CandleChart({
     }));
 
     const volumeData: HistogramData[] = candles.map((candle) => ({
-      time: candle.time,
+      time: toChartTime(candle.time),
       value: candle.volume,
       color: candle.close >= candle.open ? "rgba(22, 163, 74, 0.35)" : "rgba(220, 38, 38, 0.35)",
     }));
