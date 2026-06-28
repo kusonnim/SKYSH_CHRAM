@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState(0);
   const [progressPercent, setProgressPercent] = useState(0);
+  const [moduleProgress, setModuleProgress] = useState<{label: string; value: string; muted?: boolean}[]>([]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -99,6 +100,24 @@ export default function ProfilePage() {
       setProgressPercent(
         totalStages > 0 ? Math.round((completedCount / totalStages) * 100) : 0,
       );
+
+      const mods = learningMap.chapters.map((chapter, i) => {
+        const total = chapter.stages.length;
+        const completed = chapter.stages.filter(stage => stage.status === 'completed').length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return {
+          label: `Chapter ${i + 1}`,
+          value: `${chapter.title.split(' ')[0]}: ${percent}%`,
+          muted: percent === 0,
+        };
+      });
+
+      if (mods.length < 4) {
+        if (mods.length < 3) mods.push({ label: "Chapter 3", value: "Trends: 0%", muted: true });
+        if (mods.length < 4) mods.push({ label: "Chapter 4", value: "Risk: 0%", muted: true });
+      }
+
+      setModuleProgress(mods);
     }
 
     loadProfile();
@@ -142,6 +161,7 @@ export default function ProfilePage() {
           progressPercent={progressPercent}
           streakDays={1}
           totalXp={portfolio?.points ?? 0}
+          moduleProgress={moduleProgress}
         />
 
         <section className="space-y-4">
