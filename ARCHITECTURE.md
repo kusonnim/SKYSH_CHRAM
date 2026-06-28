@@ -1,31 +1,75 @@
-# ARCHITECTURE.md
-
 # Project Architecture
 
-This document defines the overall architecture of the project.
+This document defines the architecture of the project.
 
-Its purpose is to clearly separate responsibilities so that multiple developers can work simultaneously without conflicts.
+Its purpose is to separate responsibilities so that multiple developers can work simultaneously without conflicts.
 
 ---
 
 # Architecture Overview
 
-The project is divided into four independent layers.
+The project is divided into four layers.
 
 ```text
 Frontend
-        │
-        ▼
+  -
 Backend API
-        │
-        ▼
+  -
 Domain Logic
-        │
-        ▼
+  -
 External Services
 ```
 
 Each layer has a single responsibility.
+
+---
+
+# Product Model
+
+The product should evolve from a single daily question into a Duolingo-style chart learning path.
+
+The recommended hierarchy is:
+
+```text
+Course
+  Chapter
+    Stage
+      Question[]
+```
+
+For the MVP expansion, the application may use the smaller version:
+
+```text
+Chapter
+  Stage
+    Question[]
+```
+
+Definitions:
+
+* `Chapter` is a large learning topic, such as volume, candles, trends, or support and resistance.
+* `Stage` is a small unit inside a chapter.
+* `Question` is one task the user solves inside a stage.
+
+Example:
+
+```text
+Chapter: Volume Reading
+  Stage 1: Select the highest-volume candle
+  Stage 2: Find a volume spike
+  Stage 3: Compare price movement with volume
+```
+
+The first implementation should support only `select_candle` questions.
+
+Future question types can be added later:
+
+```text
+select_range
+compare_candles
+select_direction
+draw_line
+```
 
 ---
 
@@ -37,12 +81,13 @@ Responsibilities:
 
 * Render pages
 * Render charts
-* Display lessons
+* Display the learning map
+* Display stages
 * Display questions
 * Handle user interactions
 * Display feedback
 
-The frontend **must not** contain business logic.
+The frontend must not contain business logic.
 
 Examples of forbidden logic:
 
@@ -51,7 +96,7 @@ Examples of forbidden logic:
 * Calculating indicators
 * Calling Upbit directly
 
-The frontend only consumes API responses.
+The frontend consumes API responses and renders UI.
 
 ---
 
@@ -63,9 +108,11 @@ Responsibilities:
 
 * Receive requests
 * Call Upbit API
+* Load curriculum data
 * Generate questions
 * Grade answers
 * Return responses
+* Handle progress endpoints when progress storage is added
 
 The backend does not render UI.
 
@@ -81,12 +128,14 @@ Examples:
 
 * Normalize candle data
 * Sort candles
-* Find highest volume candle
-* Generate question
-* Grade answer
-* Generate feedback template
+* Find highest-volume candle
+* Generate questions
+* Grade answers
+* Generate feedback templates
+* Calculate stage status
+* Determine next available stage
 
-The domain layer should not depend on:
+The domain layer must not depend on:
 
 * React
 * Next.js
@@ -100,7 +149,7 @@ This layer should be reusable and independently testable.
 
 # External Services
 
-The MVP uses only two external services.
+The MVP uses two external services.
 
 ## Upbit Quotation API
 
@@ -113,14 +162,13 @@ Used only by the backend.
 
 The frontend never calls Upbit directly.
 
----
-
 ## Supabase Authentication
 
-Used only for:
+Used for:
 
 * Sign up
 * Login
+* Logout
 * Session management
 
 Authentication logic is isolated from learning logic.
@@ -129,20 +177,49 @@ Authentication logic is isolated from learning logic.
 
 # Folder Structure
 
+Recommended structure:
+
 ```text
 src/
-│
-├── app/
-│
-├── components/
-│
-├── domain/
-│
-├── server/
-│
-├── types/
-│
-└── lib/
+  app/
+    login/
+    signup/
+    dashboard/
+    stage/
+      [stageId]/
+    api/
+      learning-map/
+      stages/
+        [stageId]/
+      answers/
+      progress/
+  components/
+    auth/
+    chart/
+    learning/
+  content/
+    curriculum.ts
+  domain/
+    candle.ts
+    question.ts
+    grading.ts
+    feedback.ts
+    curriculum.ts
+    progress.ts
+  server/
+    upbit.ts
+    auth.ts
+  types/
+    api.ts
+    auth.ts
+    curriculum.ts
+    learning.ts
+  lib/
+    mock-data.ts
+    supabase/
+      client.ts
+      server.ts
+      middleware.ts
 ```
 
 ---
@@ -155,12 +232,17 @@ Examples:
 
 ```text
 app/
-    page.tsx
-    login/
-    signup/
-    dashboard/
-    api/
+  page.tsx
+  login/
+  signup/
+  dashboard/
+  stage/
+  api/
 ```
+
+`dashboard/page.tsx` should act as the authenticated learning map shell.
+
+The actual learning map UI should live in `components/learning/` to avoid route-level merge conflicts.
 
 ---
 
@@ -168,16 +250,41 @@ app/
 
 Contains reusable UI components.
 
-Examples:
+Recommended groups:
 
 ```text
-AuthForm
-CandleChart
-QuestionPanel
-FeedbackBox
+components/
+  auth/
+    AuthForm
+    LogoutButton
+  chart/
+    CandleChart
+  learning/
+    LearningMap
+    ChapterSection
+    StageNode
+    QuestionPanel
+    FeedbackBox
 ```
 
 Components should never contain business logic.
+
+---
+
+# content/
+
+Contains static learning content used before a database is introduced.
+
+Examples:
+
+```text
+content/
+  curriculum.ts
+```
+
+This folder may define chapters, stages, lesson metadata, and mock progress.
+
+It should not fetch market data, read sessions, or contain React components.
 
 ---
 
@@ -192,6 +299,8 @@ candle.ts
 question.ts
 grading.ts
 feedback.ts
+curriculum.ts
+progress.ts
 ```
 
 Every function inside this folder should be deterministic and reusable.
@@ -206,6 +315,7 @@ Examples:
 
 ```text
 upbit.ts
+auth.ts
 ```
 
 Responsibilities:
@@ -213,6 +323,7 @@ Responsibilities:
 * Fetch Upbit data
 * Convert API responses
 * Handle server-side operations
+* Contain server-only auth helpers when needed
 
 ---
 
@@ -226,10 +337,12 @@ Examples:
 
 ```text
 Candle
-
 Question
-
 AnswerResult
+Chapter
+Stage
+LearningMap
+StageStatus
 ```
 
 No business logic should exist inside this folder.
@@ -243,10 +356,67 @@ Contains application utilities.
 Examples:
 
 ```text
-supabase.ts
+lib/
+  mock-data.ts
+  supabase/
+    client.ts
+    server.ts
+    middleware.ts
 ```
 
 Utilities should be independent from business logic.
+
+---
+
+# Authentication Architecture
+
+Authentication is handled by Supabase Auth.
+
+The recommended files are:
+
+```text
+lib/supabase/client.ts
+lib/supabase/server.ts
+lib/supabase/middleware.ts
+middleware.ts
+components/auth/AuthForm.tsx
+components/auth/LogoutButton.tsx
+```
+
+Rules:
+
+* Unauthenticated users must be redirected away from protected pages such as `/dashboard`.
+* Authenticated users should not remain on `/login` or `/signup`.
+* Auth logic must remain isolated from learning and chart logic.
+* Domain functions must never import Supabase.
+
+---
+
+# Recommended Route Structure
+
+```text
+app/
+  page.tsx
+  login/
+    page.tsx
+  signup/
+    page.tsx
+  dashboard/
+    page.tsx
+  stage/
+    [stageId]/
+      page.tsx
+  api/
+    learning-map/
+      route.ts
+    stages/
+      [stageId]/
+        route.ts
+    answers/
+      route.ts
+    progress/
+      route.ts
+```
 
 ---
 
@@ -256,11 +426,9 @@ The dependency direction is fixed.
 
 ```text
 Frontend
-    │
-    ▼
+  -
 Backend
-    │
-    ▼
+  -
 Domain
 ```
 
@@ -270,8 +438,10 @@ For example:
 
 * Domain cannot import React.
 * Domain cannot import Next.js.
+* Domain cannot import Supabase.
 * Components cannot calculate the correct answer.
 * Components cannot generate questions.
+* Frontend cannot call Upbit directly.
 
 ---
 
@@ -281,38 +451,31 @@ For example:
 
 Every module should have one responsibility.
 
-Example:
-
 Bad:
 
 ```text
 question.ts
-
-- fetch candles
-- calculate indicators
-- render chart
+  fetch candles
+  calculate indicators
+  render chart
 ```
 
 Good:
 
 ```text
 upbit.ts
-→ fetch candles
+  fetch candles
 
 question.ts
-→ create question
+  create question
 
 CandleChart.tsx
-→ render chart
+  render chart
 ```
-
----
 
 ## Pure Domain Logic
 
 Business logic should not depend on frameworks.
-
-Example:
 
 Good:
 
@@ -328,46 +491,9 @@ useEffect(() => ...)
 
 inside business logic.
 
----
-
 ## API First
 
 The frontend and backend communicate only through predefined API contracts.
 
-Both teams should develop independently using the agreed request and response formats.
+All developers should build against `API.md` and shared types.
 
----
-
-# MVP Architecture
-
-```text
-User
-
-↓
-
-Frontend
-
-↓
-
-Backend API
-
-↓
-
-Domain Logic
-
-↓
-
-Upbit API
-
-↓
-
-Response
-
-↓
-
-Frontend
-```
-
-All educational decisions originate from the Domain layer.
-
-The frontend is responsible only for presenting the results.
