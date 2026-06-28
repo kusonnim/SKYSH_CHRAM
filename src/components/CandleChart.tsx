@@ -9,6 +9,7 @@ import {
   CandlestickData,
   HistogramData,
   Time,
+  SeriesMarker,
 } from "lightweight-charts";
 import type { Candle } from "@/types";
 
@@ -60,6 +61,20 @@ export function CandleChart({
       layout: {
         background: { color: "#ffffff" },
         textColor: "#1a1b22",
+        attributionLogo: false,
+      },
+      localization: {
+        priceFormatter: (price: number) =>
+          new Intl.NumberFormat("en-US").format(price),
+      },
+      handleScroll: {
+        mouseWheel: false,
+        pressedMouseMove: true,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
       grid: {
         vertLines: { color: "#e4e1ed" },
@@ -156,7 +171,35 @@ export function CandleChart({
     candleSeries.setData(candleData);
     volumeSeries.setData(volumeData);
     chart.timeScale().fitContent();
-  }, [candles, selectedIndex]);
+  }, [candles]);
+
+  useEffect(() => {
+    const candleSeries = candleSeriesRef.current;
+    if (!candleSeries) return;
+
+    const markers: SeriesMarker<Time>[] = [];
+    if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
+      markers.push({
+        time: toChartTime(candles[selectedIndex].time),
+        position: 'aboveBar',
+        color: '#dc2626',
+        shape: 'arrowDown',
+        text: '오답',
+      });
+    }
+    if (correctIndex != null && candles[correctIndex]) {
+      markers.push({
+        time: toChartTime(candles[correctIndex].time),
+        position: 'belowBar',
+        color: '#16a34a',
+        shape: 'arrowUp',
+        text: '정답',
+      });
+    }
+
+    markers.sort((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
+    candleSeries.setMarkers(markers);
+  }, [candles, selectedIndex, correctIndex, isWrong]);
 
   return (
     <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
