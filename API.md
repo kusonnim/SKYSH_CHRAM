@@ -177,6 +177,36 @@ Unauthenticated users should be redirected to `/login`.
 
 Authenticated users should be redirected away from `/login` and `/signup`.
 
+## Auth Dependencies
+
+Developer A should use Supabase Auth methods directly:
+
+```ts
+supabase.auth.signInWithPassword()
+supabase.auth.signUp()
+supabase.auth.signOut()
+supabase.auth.getUser()
+```
+
+No custom login, signup, or logout API route is required for the current milestone.
+
+---
+
+# Auth Callback Route
+
+## GET /auth/callback
+
+Handles Supabase auth redirects after email confirmation or OAuth-style callback flows.
+
+Responsibilities:
+
+* Exchange the incoming code for a session when required.
+* Refresh the server-side session cookies.
+* Redirect the user to `/dashboard` when successful.
+* Redirect to `/login` or an error-safe route when unsuccessful.
+
+This is an application route, not a JSON API endpoint.
+
 ---
 
 # Learning Map API
@@ -350,6 +380,30 @@ Response:
 
 ---
 
+# Optional Progress API
+
+## GET /api/progress
+
+Returns the current user's persisted progress.
+
+This endpoint is optional and should not be implemented until progress persistence is required.
+
+For the current milestone, `GET /api/learning-map` already includes stage status.
+
+Future response:
+
+```json
+{
+  "success": true,
+  "data": {
+    "completedStageIds": ["volume-highest-candle"],
+    "availableStageIds": ["volume-spike"]
+  }
+}
+```
+
+---
+
 # Upbit Internal API
 
 The frontend never communicates directly with Upbit.
@@ -383,6 +437,38 @@ Response:
 
 # Component Contracts
 
+## AuthMessage
+
+```ts
+type AuthMessageProps = {
+  type: "error" | "success" | "info";
+  message: string;
+}
+```
+
+---
+
+## AuthSubmitButton
+
+```ts
+type AuthSubmitButtonProps = {
+  loading: boolean;
+  children: React.ReactNode;
+}
+```
+
+---
+
+## AuthRedirectLink
+
+```ts
+type AuthRedirectLinkProps = {
+  mode: "login" | "signup";
+}
+```
+
+---
+
 ## LearningMap
 
 ```ts
@@ -411,6 +497,51 @@ type ChapterSectionProps = {
 type StageNodeProps = {
   stage: Stage;
   onSelect: (stageId: string) => void;
+}
+```
+
+---
+
+## StageStatusBadge
+
+```ts
+type StageStatusBadgeProps = {
+  status: StageStatus;
+}
+```
+
+---
+
+## StageProgress
+
+```ts
+type StageProgressProps = {
+  current: number;
+  total: number;
+}
+```
+
+---
+
+## StageSessionShell
+
+```ts
+type StageSessionShellProps = {
+  stage: Stage;
+  currentQuestionIndex: number;
+  totalQuestions: number;
+  children: React.ReactNode;
+}
+```
+
+---
+
+## StageCompletePanel
+
+```ts
+type StageCompletePanelProps = {
+  stage: Stage;
+  onContinue: () => void;
 }
 ```
 
@@ -574,6 +705,20 @@ POST /api/answers
 AnswerResult
   -
 Display feedback and update progress
+```
+
+Current frontend API dependencies:
+
+```text
+Auth:
+  Supabase Auth methods
+  GET /auth/callback
+
+Learning:
+  GET /api/learning-map
+  GET /api/stages/:stageId
+  POST /api/answers
+  POST /api/progress/stage-complete
 ```
 
 ---

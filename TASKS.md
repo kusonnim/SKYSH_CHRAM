@@ -85,6 +85,58 @@ src/types/
 * Authenticated users are redirected from `/login` and `/signup` to `/dashboard`.
 * Auth logic remains isolated from learning and chart logic.
 
+## Current A-Scope Tasks
+
+Developer A should implement the following without touching Developer B files:
+
+* Improve login form UX.
+* Improve signup form UX.
+* Connect logout button to Supabase Auth.
+* Protect `/dashboard`.
+* Redirect authenticated users from `/login` and `/signup` to `/dashboard`.
+* Clean up the auth callback flow.
+
+## Recommended A-Scope Files
+
+Existing files:
+
+```text
+src/app/login/
+src/app/signup/
+src/app/dashboard/
+src/app/auth/callback/
+src/components/auth/
+src/lib/supabase/
+src/middleware.ts
+```
+
+Recommended additional component files:
+
+```text
+src/components/auth/AuthMessage.tsx
+src/components/auth/AuthSubmitButton.tsx
+src/components/auth/AuthRedirectLink.tsx
+```
+
+Optional utility file:
+
+```text
+src/lib/auth/redirects.ts
+```
+
+Use the optional utility only if redirect rules start repeating across pages, middleware, and callback handling.
+
+## AuthForm Ownership Rule
+
+Avoid keeping two competing implementations of `AuthForm`.
+
+Preferred structure:
+
+```text
+src/components/auth/AuthForm.tsx    actual implementation
+src/components/AuthForm.tsx         re-export only
+```
+
 ---
 
 # Developer B: Curriculum / Domain
@@ -182,6 +234,46 @@ src/app/api/
 * Stage page can display placeholder questions before API integration is complete.
 * UI must not calculate correct answers or generate questions.
 
+## Current C-Scope Tasks
+
+Developer C should implement the following without touching Developer B files:
+
+* Improve `StageNode` visual states for `locked`, `available`, and `completed`.
+* Build the stage page layout.
+* Add placeholder UI for question progression.
+* Add a progress indicator such as `1 / 3`.
+
+## Recommended C-Scope Files
+
+Existing files:
+
+```text
+src/components/learning/
+src/components/chart/
+src/app/stage/
+```
+
+Recommended additional component files:
+
+```text
+src/components/learning/StageStatusBadge.tsx
+src/components/learning/StageProgress.tsx
+src/components/learning/StageSessionShell.tsx
+src/components/learning/StageCompletePanel.tsx
+```
+
+`StageStatusBadge` should be shared by `StageNode` and any future stage summary UI.
+
+`StageProgress` should display question progress such as:
+
+```text
+1 / 3
+```
+
+`StageSessionShell` should own layout only.
+
+It must not generate questions, grade answers, or calculate correct answers.
+
 ---
 
 # Backend / API Ownership
@@ -211,6 +303,50 @@ For the 3-person plan:
 src/app/api/
 src/server/
 ```
+
+---
+
+# Current API Dependencies
+
+The A and C workstreams should not require new backend APIs.
+
+## Developer A
+
+Developer A should use Supabase Auth directly:
+
+```ts
+supabase.auth.signInWithPassword()
+supabase.auth.signUp()
+supabase.auth.signOut()
+supabase.auth.getUser()
+```
+
+Required app route:
+
+```text
+GET /auth/callback
+```
+
+No custom login, signup, or logout API route is required for the current milestone.
+
+## Developer C
+
+Developer C should consume the existing learning APIs:
+
+```text
+GET /api/learning-map
+GET /api/stages/:stageId
+POST /api/answers
+POST /api/progress/stage-complete
+```
+
+Optional future API:
+
+```text
+GET /api/progress
+```
+
+This is not required for the current milestone because `GET /api/learning-map` already returns stage status.
 
 ---
 

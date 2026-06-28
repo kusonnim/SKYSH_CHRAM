@@ -2,5 +2,8 @@ export * from "./ChapterSection";
 export * from "./FeedbackBox";
 export * from "./LearningMap";
 export * from "./QuestionPanel";
+export * from "./StageCompletePanel";
 export * from "./StageNode";
-
+export * from "./StageProgress";
+export * from "./StageSessionShell";
+export * from "./StageStatusBadge";
