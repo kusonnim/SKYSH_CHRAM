@@ -41,6 +41,7 @@ export function CandleChart({
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const handlerRef = useRef<(index: number) => void>(() => {});
+  const isPointerSelectingRef = useRef(false);
   const timeToIndexRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
@@ -72,13 +73,13 @@ export function CandleChart({
           new Intl.NumberFormat("en-US").format(price),
       },
       handleScroll: {
-        mouseWheel: false,
-        pressedMouseMove: true,
+        mouseWheel: !selectable,
+        pressedMouseMove: !selectable,
       },
       handleScale: {
-        axisPressedMouseMove: true,
-        mouseWheel: true,
-        pinch: true,
+        axisPressedMouseMove: !selectable,
+        mouseWheel: !selectable,
+        pinch: !selectable,
       },
       grid: {
         vertLines: { color: "#e4e1ed" },
@@ -129,17 +130,62 @@ export function CandleChart({
 
     resizeObserver.observe(container);
 
-    chart.subscribeClick((param) => {
-      const rawTime = param.time as Time | string | undefined;
+    const selectTime = (rawTime: Time | string | undefined) => {
       if (!selectable) return;
       if (!rawTime) return;
       const index = timeToIndexRef.current[String(rawTime)];
       if (index !== undefined) {
         handlerRef.current(index);
       }
+    };
+
+    const selectAtPointer = (event: PointerEvent) => {
+      if (!selectable) return;
+      const bounds = container.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const time = chart.timeScale().coordinateToTime(x);
+      selectTime(time as Time | string | undefined);
+    };
+
+    chart.subscribeClick((param) => {
+      selectTime(param.time as Time | string | undefined);
     });
 
+    chart.subscribeCrosshairMove((param) => {
+      if (!isPointerSelectingRef.current) return;
+      selectTime(param.time as Time | string | undefined);
+    });
+
+    const startSelecting = (event: PointerEvent) => {
+      if (!selectable) return;
+      event.preventDefault();
+      isPointerSelectingRef.current = true;
+      selectAtPointer(event);
+    };
+    const moveSelecting = (event: PointerEvent) => {
+      if (!isPointerSelectingRef.current) return;
+      event.preventDefault();
+      selectAtPointer(event);
+    };
+    const stopSelecting = () => {
+      isPointerSelectingRef.current = false;
+    };
+
+    container.addEventListener("pointerdown", startSelecting);
+    container.addEventListener("pointermove", moveSelecting);
+    window.addEventListener("pointerup", stopSelecting);
+    window.addEventListener("pointercancel", stopSelecting);
+
+    if (selectable) {
+      container.style.touchAction = "none";
+    }
+
     return () => {
+      container.removeEventListener("pointerdown", startSelecting);
+      container.removeEventListener("pointermove", moveSelecting);
+      window.removeEventListener("pointerup", stopSelecting);
+      window.removeEventListener("pointercancel", stopSelecting);
+      container.style.touchAction = "";
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
@@ -183,6 +229,19 @@ export function CandleChart({
     if (!candleSeries) return;
 
     const markers: SeriesMarker<Time>[] = [];
+    if (
+      selectable &&
+      selectedIndex !== null &&
+      !isWrong &&
+      candles[selectedIndex]
+    ) {
+      markers.push({
+        time: toChartTime(candles[selectedIndex].time),
+        position: "aboveBar",
+        color: "#4648d4",
+        shape: "circle",
+      });
+    }
     if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
       markers.push({
         time: toChartTime(candles[selectedIndex].time),
@@ -210,14 +269,6 @@ export function CandleChart({
     <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1a1b22]">{title}</h3>
-        {selectable && (
-          <div className="text-[10px] font-medium uppercase text-[#434653]">
-            Selected:{" "}
-            <span className="font-bold text-[#344e5d]">
-              {selectedIndex === null ? "none" : `Candle #${selectedIndex + 1}`}
-            </span>
-          </div>
-        )}
       </div>
       <div className="overflow-hidden rounded-lg border border-[#c4c6d5]/30 bg-white">
         <div ref={chartContainer} className="h-[360px] w-full" />
