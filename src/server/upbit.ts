@@ -1,5 +1,10 @@
+import Upbit from "@upbit-official/upbit-sdk";
 import type { Candle } from "@/types";
 import { normalizeUpbitCandles } from "@/domain/candle";
+
+// Quotation API (candles, tickers, etc.) does not require authentication.
+// The SDK internally marks these endpoints as unauthenticated.
+const client = new Upbit();
 
 export type FetchUpbitCandlesParams = {
   market: string;
@@ -11,22 +16,9 @@ export async function fetchUpbitCandles(
   params: FetchUpbitCandlesParams,
 ): Promise<Candle[]> {
   const { market, count } = params;
-  
+
   // For the MVP, we only support daily candles ("day")
-  const url = `https://api.upbit.com/v1/candles/days?market=${market}&count=${count}`;
-  
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
+  const rawCandles = await client.candles.listDays({ market, count });
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch candles from Upbit: ${response.statusText}`);
-  }
-
-  const rawCandles = await response.json();
   return normalizeUpbitCandles(rawCandles);
 }
-
