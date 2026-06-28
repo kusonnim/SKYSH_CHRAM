@@ -106,15 +106,15 @@ export default function ProfilePage() {
         const completed = chapter.stages.filter(stage => stage.status === 'completed').length;
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
         return {
-          label: `Module ${i + 1}`,
+          label: `Chapter ${i + 1}`,
           value: `${chapter.title.split(' ')[0]}: ${percent}%`,
           muted: percent === 0,
         };
       });
 
       if (mods.length < 4) {
-        if (mods.length < 3) mods.push({ label: "Module 3", value: "Trends: 0%", muted: true });
-        if (mods.length < 4) mods.push({ label: "Module 4", value: "Risk: 0%", muted: true });
+        if (mods.length < 3) mods.push({ label: "Chapter 3", value: "Trends: 0%", muted: true });
+        if (mods.length < 4) mods.push({ label: "Chapter 4", value: "Risk: 0%", muted: true });
       }
 
       setModuleProgress(mods);

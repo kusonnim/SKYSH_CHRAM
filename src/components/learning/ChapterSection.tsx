@@ -25,7 +25,7 @@ export function ChapterSection({ chapter }: ChapterSectionProps) {
             </h2>
           </div>
           <span className="text-sm font-medium text-[#747685]">
-            {completedCount}/{chapter.stages.length} modules
+            {completedCount}/{chapter.stages.length} stages
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-[#e2e2eb]">

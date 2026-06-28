@@ -65,7 +65,7 @@ export function LearningStats({
         <div className="mt-6 grid grid-cols-2 gap-4 border-t border-[#c4c6d5]/30 pt-6 md:grid-cols-4">
           {moduleProgress ? (
             moduleProgress.map((mod, i) => (
-              <ModuleProgress
+              <ChapterProgress
                 key={i}
                 label={mod.label}
                 value={mod.value}
@@ -74,10 +74,10 @@ export function LearningStats({
             ))
           ) : (
             <>
-              <ModuleProgress label="Module 1" value="Volume: 50%" />
-              <ModuleProgress label="Module 2" value="Momentum: 0%" />
-              <ModuleProgress label="Module 3" value="Trends: 0%" muted />
-              <ModuleProgress label="Module 4" value="Risk: 0%" muted />
+              <ChapterProgress label="Chapter 1" value="Volume: 50%" />
+              <ChapterProgress label="Chapter 2" value="Momentum: 0%" />
+              <ChapterProgress label="Chapter 3" value="Trends: 0%" muted />
+              <ChapterProgress label="Chapter 4" value="Risk: 0%" muted />
             </>
           )}
         </div>
@@ -111,7 +111,7 @@ function StatCard({
   );
 }
 
-function ModuleProgress({
+function ChapterProgress({
   label,
   muted,
   value,
