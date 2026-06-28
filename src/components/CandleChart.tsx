@@ -80,6 +80,8 @@ export function CandleChart({
         borderColor: "#cbd5e1",
         timeVisible: true,
         secondsVisible: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
       },
     });
 
