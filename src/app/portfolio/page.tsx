@@ -285,6 +285,7 @@ export default function PortfolioPage() {
             candles={candles}
             selectable={false}
             selectedIndex={null}
+            title="BTC Daily Chart"
           />
         ) : (
           <section className="flex h-[420px] items-center justify-center rounded-xl border border-[#c4c6d5]/30 bg-white text-sm font-semibold text-[#747685] shadow-sm">

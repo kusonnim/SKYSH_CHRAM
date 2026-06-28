@@ -20,6 +20,7 @@ type CandleChartProps = {
   correctIndex?: number | null;
   isWrong?: boolean;
   selectable?: boolean;
+  title?: string;
 };
 
 function toChartTime(time: string): Time {
@@ -33,6 +34,7 @@ export function CandleChart({
   correctIndex,
   isWrong,
   selectable = true,
+  title = "Candlestick Chart",
 }: CandleChartProps) {
   const chartContainer = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -207,7 +209,7 @@ export function CandleChart({
   return (
     <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#1a1b22]">BTC Daily Chart</h3>
+        <h3 className="text-sm font-semibold text-[#1a1b22]">{title}</h3>
         {selectable && (
           <div className="text-[10px] font-medium uppercase text-[#434653]">
             Selected:{" "}
