@@ -1,26 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AnswerResult, Question } from "@/types";
-import { gradeSelectCandleAnswer } from "@/domain/grading";
+import type { AnswerResult, ApiResponse, Question } from "@/types";
 import { CandleChart } from "@/components/CandleChart";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { QuestionPanel } from "@/components/QuestionPanel";
-import { mockAnswerResult, mockQuestion } from "@/lib/mock-data";
 
 export default function DashboardPage() {
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [result, setResult] = useState<AnswerResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setQuestion(mockQuestion);
-      setLoading(false);
-    }, 200);
+    async function loadQuestion() {
+      try {
+        const response = await fetch("/api/questions/today");
+        const payload = (await response.json()) as ApiResponse<Question>;
 
-    return () => window.clearTimeout(timer);
+        if (!payload.success) {
+          throw new Error(payload.error?.message ?? "Unable to load question.");
+        }
+
+        setQuestion(payload.data);
+      } catch (err) {
+        setError("Failed to load today's question. Please refresh the page.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadQuestion();
   }, []);
 
   function handleSelect(index: number) {
@@ -28,38 +39,60 @@ export default function DashboardPage() {
     setResult(null);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!question || selectedIndex === null || question.answer?.correctIndex === undefined) {
       return;
     }
 
-    const grading = gradeSelectCandleAnswer(
-      selectedIndex,
-      question.answer.correctIndex,
-    );
+    setError(null);
 
-    setResult({
-      ...mockAnswerResult,
-      isCorrect: grading.isCorrect,
-      score: grading.score,
-      feedback: grading.isCorrect
-        ? "Great job! You correctly identified the highest-volume candle."
-        : "That candle is not the highest-volume candle. Compare the volume bars again.",
-    });
+    try {
+      const response = await fetch("/api/answers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          questionId: question.id,
+          selectedCandleIndex: selectedIndex,
+          correctCandleIndex: question.answer.correctIndex,
+        }),
+      });
+
+      const payload = (await response.json()) as ApiResponse<AnswerResult>;
+
+      if (!payload.success) {
+        throw new Error(payload.error?.message ?? "Answer submission failed.");
+      }
+
+      setResult(payload.data);
+    } catch (err) {
+      setError("Unable to submit your answer. Please try again.");
+    }
   }
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:space-y-0">
       <section className="space-y-6">
-        <div className="rounded border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-semibold text-slate-950">Dashboard</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Select the candle with the highest trading volume and submit your answer.
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">
+                Chart lesson
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-950">Dashboard</h1>
+            </div>
+            <div className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
+              Step 1 of 1 • BTC daily volume
+            </div>
+          </div>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600">
+            Select the candle with the highest trading volume. Use the chart below to explore the last 30 daily bars and submit your answer when you are ready.
           </p>
         </div>
 
         {loading || !question ? (
-          <div className="rounded border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
             Loading today&apos;s question...
           </div>
         ) : (
@@ -73,7 +106,7 @@ export default function DashboardPage() {
 
       <aside className="space-y-6">
         {loading || !question ? (
-          <div className="rounded border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
             Preparing the question panel...
           </div>
         ) : (

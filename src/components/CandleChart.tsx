@@ -127,12 +127,14 @@ export function CandleChart({
 
   return (
     <div className="rounded border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-semibold text-slate-950">BTC Daily Chart</h2>
-          <p className="text-sm text-slate-500">Click a candle to select it.</p>
+          <p className="text-sm text-slate-500">Click a candle on the chart to select it.</p>
         </div>
-        <span className="text-sm text-slate-500">Selected: {selectedIndex ?? "none"}</span>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-600">
+          Selected candle: {selectedIndex !== null ? selectedIndex + 1 : "none"}
+        </span>
       </div>
       <div ref={chartContainer} className="mt-4 h-[520px] w-full" />
     </div>
