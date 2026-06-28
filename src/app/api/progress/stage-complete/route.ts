@@ -1,10 +1,40 @@
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getNextStageId } from "@/domain/progress";
+
 import { staticLearningMap } from "@/content/curriculum";
+import { getNextStageId } from "@/domain/progress";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const STAGE_COMPLETE_POINTS = 100;
+
+type CompleteStageResult = {
+  already_completed: boolean;
+  points_awarded: number;
+  stage_id: string;
+  status: string;
+  total_points: number;
+};
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Unauthorized",
+          },
+        },
+        { status: 401 },
+      );
+    }
+
     const body = (await request.json()) as { stageId?: string };
 
     if (!body.stageId) {
@@ -20,76 +50,26 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createSupabaseServerClient();
-    
-    // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
+    const nextStageId = getNextStageId(staticLearningMap, body.stageId);
+    const { data, error } = await supabase
+      .rpc("complete_stage", {
+        p_stage_id: body.stageId,
+        p_points_award: STAGE_COMPLETE_POINTS,
+      })
+      .single();
+    const completion = data as CompleteStageResult | null;
+
+    if (error) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: "UNAUTHORIZED",
-            message: "Unauthorized",
+            code: "STAGE_COMPLETE_FAILED",
+            message: error.message,
           },
         },
-        { status: 401 },
+        { status: 500 },
       );
-    }
-
-    const nextStageId = getNextStageId(staticLearningMap, body.stageId);
-
-    // 2. Try inserting into stage_completions
-    const { error: insertError } = await supabase
-      .from("stage_completions")
-      .insert({
-        user_id: user.id,
-        stage_id: body.stageId,
-        points_awarded: 100,
-      });
-
-    let pointsAwarded = 0;
-    let alreadyCompleted = false;
-
-    if (insertError) {
-      // PostgreSQL error code 23505 is unique_violation
-      if (insertError.code === "23505") {
-        alreadyCompleted = true;
-        pointsAwarded = 0;
-      } else {
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: "DATABASE_ERROR",
-              message: insertError.message,
-            },
-          },
-          { status: 500 },
-        );
-      }
-    } else {
-      // 3. Increment user's points by 100
-      const { error: updateError } = await supabase.rpc("increment_points", {
-        p_user_id: user.id,
-        p_amount: 100,
-      });
-
-      if (updateError) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: "DATABASE_ERROR",
-              message: updateError.message,
-            },
-          },
-          { status: 500 },
-        );
-      }
-
-      pointsAwarded = 100;
-      alreadyCompleted = false;
     }
 
     return NextResponse.json({
@@ -98,8 +78,9 @@ export async function POST(request: Request) {
         stageId: body.stageId,
         status: "completed",
         nextStageId,
-        pointsAwarded,
-        alreadyCompleted,
+        pointsAwarded: completion?.points_awarded ?? 0,
+        alreadyCompleted: completion?.already_completed ?? false,
+        totalPoints: completion?.total_points ?? 0,
       },
     });
   } catch (error: any) {
@@ -115,5 +96,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-

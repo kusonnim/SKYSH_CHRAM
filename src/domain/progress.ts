@@ -28,3 +28,44 @@ export function getNextStageId(learningMap: LearningMap, currentStageId: string)
   return allStages[currentIndex + 1].id;
 }
 
+export function applyCompletedStageProgress(
+  learningMap: LearningMap,
+  completedStageIds: string[],
+): LearningMap {
+  const completedIds = new Set(completedStageIds);
+  const orderedStages = [...learningMap.chapters]
+    .sort((a, b) => a.order - b.order)
+    .flatMap((chapter) =>
+      [...chapter.stages].sort((a, b) => a.order - b.order),
+    );
+  const availableIds = new Set(
+    orderedStages
+      .filter((stage, index) => {
+        if (index === 0) {
+          return true;
+        }
+
+        const previousStage = orderedStages[index - 1];
+        return previousStage ? completedIds.has(previousStage.id) : false;
+      })
+      .map((stage) => stage.id),
+  );
+
+  return {
+    chapters: learningMap.chapters.map((chapter) => ({
+      ...chapter,
+      stages: chapter.stages.map((stage) => {
+        if (completedIds.has(stage.id)) {
+          return { ...stage, status: "completed" };
+        }
+
+        if (availableIds.has(stage.id)) {
+          return { ...stage, status: "available" };
+        }
+
+        return { ...stage, status: "locked" };
+      }),
+    })),
+  };
+}
+
