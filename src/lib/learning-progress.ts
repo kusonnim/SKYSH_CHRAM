@@ -7,7 +7,7 @@ type StoredProgress = {
   completedStageIds: string[];
 };
 
-function readProgress(): StoredProgress {
+export function readProgress(): StoredProgress {
   if (typeof window === "undefined") {
     return { completedStageIds: [] };
   }

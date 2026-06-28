@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { staticLearningMap } from "@/content/curriculum";
+import { staticLearningMap, StageDatasets } from "@/content/curriculum";
 import { findStageById } from "@/domain";
 import { fetchUpbitCandles } from "@/server/upbit";
-import {
-  createLongestBodyQuestion,
-  createMaxVolumeQuestion,
-  sortCandlesOldestFirst,
-} from "@/domain";
+import { sortCandlesOldestFirst, generateQuestionForStage } from "@/domain";
 
 type StageRouteContext = {
   params: Promise<{
@@ -32,29 +28,39 @@ export async function GET(_request: Request, context: StageRouteContext) {
   }
 
   try {
-    const candles = await fetchUpbitCandles({
-      market: "KRW-BTC",
-      timeframe: "day",
-      count: 30,
-    });
+    const targetDates = StageDatasets[stageId] || [];
+    const count = stage.questionCount || 1;
+    
+    const datesToFetch = targetDates.length > 0 
+      ? targetDates.slice(0, count) 
+      : Array.from({ length: count }).map(() => undefined);
 
-    const sortedCandles = sortCandlesOldestFirst(candles);
-    const question =
-      stage.id === "longest-body-candle"
-        ? createLongestBodyQuestion(sortedCandles)
-        : createMaxVolumeQuestion(sortedCandles);
+    const candlesPromises = datesToFetch.map(to => 
+      fetchUpbitCandles({
+        market: "KRW-BTC",
+        timeframe: "day",
+        count: 30,
+        to
+      })
+    );
+    
+    const allCandles = await Promise.all(candlesPromises);
+
+    const questions = allCandles.map((candles, index) => {
+      const sortedCandles = sortCandlesOldestFirst(candles);
+      const question = generateQuestionForStage(stage.id, sortedCandles);
+      return {
+        ...question,
+        id: `${stage.id}-question-${index + 1}`,
+        stageId: stage.id,
+      };
+    });
 
     return NextResponse.json({
       success: true,
       data: {
         stage,
-        questions: [
-          {
-            ...question,
-            id: `${stage.id}-question-1`,
-            stageId: stage.id,
-          },
-        ],
+        questions,
       },
     });
   } catch (error: any) {

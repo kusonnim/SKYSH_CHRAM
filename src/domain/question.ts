@@ -54,3 +54,46 @@ export function createLongestBodyQuestion(candles: Candle[]): Question {
     },
   };
 }
+
+export function findVolumeSpikeCandleIndex(candles: Candle[]): number {
+  if (candles.length < 2) return -1;
+  return candles.reduce((spikeIndex, candle, index) => {
+    if (index === 0) return spikeIndex;
+    const prevCandle = candles[index - 1];
+    const prevSpikeCandle = candles[spikeIndex];
+    const prevSpikePrevCandle = candles[spikeIndex - 1] || prevSpikeCandle;
+
+    const currentSpikeRatio = prevCandle.volume === 0 ? 0 : candle.volume / prevCandle.volume;
+    const maxSpikeRatio = prevSpikePrevCandle.volume === 0 ? 0 : prevSpikeCandle.volume / prevSpikePrevCandle.volume;
+
+    return currentSpikeRatio > maxSpikeRatio ? index : spikeIndex;
+  }, 1);
+}
+
+export function createVolumeSpikeQuestion(candles: Candle[]): Question {
+  return {
+    id: "volume-spike-candle",
+    type: "select_candle",
+    stageId: "volume-spike",
+    market: "KRW-BTC",
+    timeframe: "day",
+    prompt: "직전 캔들 대비 거래량이 가장 폭발적으로 증가한(Volume Spike) 캔들을 선택하세요.",
+    candles,
+    answer: {
+      correctIndex: findVolumeSpikeCandleIndex(candles),
+    },
+  };
+}
+
+export function generateQuestionForStage(stageId: string, candles: Candle[]): Question {
+  switch (stageId) {
+    case "volume-highest-candle":
+      return createMaxVolumeQuestion(candles);
+    case "longest-body-candle":
+      return createLongestBodyQuestion(candles);
+    case "volume-spike":
+      return createVolumeSpikeQuestion(candles);
+    default:
+      return createMaxVolumeQuestion(candles);
+  }
+}

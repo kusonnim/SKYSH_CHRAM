@@ -8,6 +8,8 @@ import {
   ProfileEditForm,
 } from "@/components/profile";
 import { LogoutButton } from "@/components/auth";
+import { readProgress } from "@/lib/learning-progress";
+import { staticLearningMap } from "@/content/curriculum";
 import type { PortfolioSummary } from "@/types";
 
 type ProfileData = {
@@ -24,6 +26,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [completedLessons, setCompletedLessons] = useState(0);
+  const [progressPercent, setProgressPercent] = useState(0);
 
   useEffect(() => {
     async function loadProfile() {
@@ -72,7 +76,21 @@ export default function ProfilePage() {
       }
     }
 
+    function loadProgress() {
+      const progress = readProgress();
+      const completedCount = progress.completedStageIds.length;
+      const totalStages = staticLearningMap.chapters.reduce(
+        (acc, chapter) => acc + chapter.stages.length,
+        0,
+      );
+      setCompletedLessons(completedCount);
+      setProgressPercent(
+        totalStages > 0 ? Math.round((completedCount / totalStages) * 100) : 0,
+      );
+    }
+
     loadProfile();
+    loadProgress();
   }, [supabase]);
 
   const nickname = profile?.nickname ?? "Chart Learner";
@@ -109,8 +127,8 @@ export default function ProfilePage() {
         <ProfileCard email={email} joinedAt={joinedAt} nickname={nickname} />
 
         <LearningStats
-          completedLessons={1}
-          progressPercent={25}
+          completedLessons={completedLessons}
+          progressPercent={progressPercent}
           streakDays={1}
           totalXp={portfolio?.points ?? 0}
         />

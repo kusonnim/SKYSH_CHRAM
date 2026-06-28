@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getNextStageId } from "@/domain/progress";
 import { staticLearningMap } from "@/content/curriculum";
+import { getNextStageId } from "@/domain/progress";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const STAGE_COMPLETE_POINTS = 100;
@@ -96,4 +96,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
