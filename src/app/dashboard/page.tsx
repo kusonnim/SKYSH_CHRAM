@@ -1,26 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { AnswerResult, Question } from "@/types";
+import { gradeSelectCandleAnswer } from "@/domain/grading";
 import { CandleChart } from "@/components/CandleChart";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { QuestionPanel } from "@/components/QuestionPanel";
 import { mockAnswerResult, mockQuestion } from "@/lib/mock-data";
 
 export default function DashboardPage() {
+  const [question, setQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [feedback, setFeedback] = useState(mockAnswerResult);
+  const [result, setResult] = useState<AnswerResult | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setQuestion(mockQuestion);
+      setLoading(false);
+    }, 200);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  function handleSelect(index: number) {
+    setSelectedIndex(index);
+    setResult(null);
+  }
 
   function handleSubmit() {
-    setSubmitted(true);
-    setFeedback({
+    if (!question || selectedIndex === null || question.answer?.correctIndex === undefined) {
+      return;
+    }
+
+    const grading = gradeSelectCandleAnswer(
+      selectedIndex,
+      question.answer.correctIndex,
+    );
+
+    setResult({
       ...mockAnswerResult,
-      feedback:
-        selectedIndex === mockQuestion.answer?.correctIndex
-          ? "Great job! You correctly identified the highest-volume candle."
-          : "That candle is not the highest-volume candle. Compare the volume bars again.",
-      isCorrect: selectedIndex === mockQuestion.answer?.correctIndex,
-      score: selectedIndex === mockQuestion.answer?.correctIndex ? 1 : 0,
+      isCorrect: grading.isCorrect,
+      score: grading.score,
+      feedback: grading.isCorrect
+        ? "Great job! You correctly identified the highest-volume candle."
+        : "That candle is not the highest-volume candle. Compare the volume bars again.",
     });
   }
 
@@ -34,20 +58,33 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <CandleChart
-          candles={mockQuestion.candles}
-          selectedIndex={selectedIndex}
-          onSelectCandle={setSelectedIndex}
-        />
+        {loading || !question ? (
+          <div className="rounded border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
+            Loading today&apos;s question...
+          </div>
+        ) : (
+          <CandleChart
+            candles={question.candles}
+            selectedIndex={selectedIndex}
+            onSelectCandle={handleSelect}
+          />
+        )}
       </section>
 
       <aside className="space-y-6">
-        <QuestionPanel
-          prompt={mockQuestion.prompt}
-          selectedIndex={selectedIndex}
-          onSubmit={handleSubmit}
-        />
-        <FeedbackBox result={submitted ? feedback : null} />
+        {loading || !question ? (
+          <div className="rounded border border-slate-200 bg-white p-6 text-center text-slate-600 shadow-sm">
+            Preparing the question panel...
+          </div>
+        ) : (
+          <QuestionPanel
+            prompt={question.prompt}
+            selectedIndex={selectedIndex}
+            onSubmit={handleSubmit}
+          />
+        )}
+
+        <FeedbackBox result={result} />
       </aside>
     </main>
   );

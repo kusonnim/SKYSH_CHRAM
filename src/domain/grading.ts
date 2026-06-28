@@ -5,9 +5,15 @@ export type GradeSelectCandleAnswerResult = {
 };
 
 export function gradeSelectCandleAnswer(
-  _selectedIndex: number,
-  _correctIndex: number,
+  selectedIndex: number,
+  correctIndex: number,
 ): GradeSelectCandleAnswerResult {
-  throw new Error("TODO: implement gradeSelectCandleAnswer in the domain layer.");
+  const isCorrect = selectedIndex === correctIndex;
+
+  return {
+    isCorrect,
+    score: isCorrect ? 1 : 0,
+    mistakeCode: isCorrect ? null : "wrong_selection",
+  };
 }
 
