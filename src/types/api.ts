@@ -66,3 +66,19 @@ export type PortfolioSummary = {
     totalAssetValue: number;
   };
 };
+
+export type TradeSide = "buy" | "sell";
+
+export type SubmitTradeRequest = {
+  side: TradeSide;
+  pointsAmount: number;
+};
+
+export type TradeResult = {
+  market: "KRW-BTC";
+  side: TradeSide;
+  price: number;
+  quantity: number;
+  pointsAmount: number;
+  portfolio: PortfolioSummary;
+};
