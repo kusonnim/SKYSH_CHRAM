@@ -8,6 +8,17 @@ import { staticLearningMap } from "@/content/curriculum";
 import { markStageCompleted } from "@/lib/learning-progress";
 import type { AnswerResult, StageCompleteResponse, StageSession } from "@/types";
 
+function getStageNumber(stageId: string) {
+  for (const chapter of staticLearningMap.chapters) {
+    const stage = chapter.stages.find((candidate) => candidate.id === stageId);
+    if (stage) {
+      return `${chapter.order}-${stage.order}`;
+    }
+  }
+
+  return "1-1";
+}
+
 export default function StagePage() {
   const params = useParams();
   const stageId = params?.stageId;
@@ -245,9 +256,10 @@ export default function StagePage() {
   const isLastQuestion = currentIndex === stageSession.questions.length - 1;
   const continueText = isLastQuestion ? "Complete stage" : "Next question";
   const progressText = `${currentIndex + 1}/${stageSession.questions.length}`;
+  const stageNumber = getStageNumber(stageSession.stage.id);
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] pb-40 text-[#1a1b22]">
+    <div className="min-h-screen bg-[#faf8ff] text-[#1a1b22]">
       <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[#c4c6d5]/40 bg-white px-4">
         <div className="flex items-center gap-3">
           <button
@@ -267,10 +279,10 @@ export default function StagePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg space-y-6 px-4 pt-20">
+      <main className="mx-auto max-w-lg space-y-6 px-4 pb-60 pt-20">
         <header className="space-y-1">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#344e5d]">
-            Stage {stageSession.stage.order.toString().padStart(2, "0")}
+            Stage {stageNumber}
           </p>
           <h2 className="text-2xl font-bold text-[#1a1b22]">
             {stageSession.stage.title}
@@ -287,6 +299,7 @@ export default function StagePage() {
             setFeedback(null);
           }}
           selectedIndex={selectedIndex}
+          title="Question Chart"
         />
 
         <FeedbackBox
