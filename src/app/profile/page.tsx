@@ -8,6 +8,7 @@ import {
   ProfileEditForm,
 } from "@/components/profile";
 import { LogoutButton } from "@/components/auth";
+import type { PortfolioSummary } from "@/types";
 
 type ProfileData = {
   avatarUrl?: string | null;
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [joinedAt, setJoinedAt] = useState("");
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,6 +58,12 @@ export default function ProfilePage() {
         const data = await response.json();
         if (data.success) {
           setProfile(data.data);
+        }
+
+        const portfolioResponse = await fetch("/api/portfolio");
+        const portfolioData = await portfolioResponse.json();
+        if (portfolioData.success) {
+          setPortfolio(portfolioData.data);
         }
       } catch (error) {
         console.error("Unable to load profile API data.", error);
@@ -104,7 +112,7 @@ export default function ProfilePage() {
           completedLessons={1}
           progressPercent={25}
           streakDays={1}
-          totalXp={120}
+          totalXp={portfolio?.points ?? 0}
         />
 
         <section className="space-y-4">
