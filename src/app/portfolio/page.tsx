@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CandleChart } from "@/components/chart";
-import { DEFAULT_MARKET, findSupportedMarket, supportedMarkets } from "@/domain/markets";
+import {
+  DEFAULT_MARKET,
+  findSupportedMarket,
+  supportedMarkets,
+} from "@/domain/markets";
 import type { Candle, PortfolioSummary, TradeSide } from "@/types";
 
 function formatPoints(value: number) {
@@ -130,17 +134,19 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] pb-32 text-[#1a1b22]">
-      <header className="sticky top-0 z-50 border-b border-[#c4c6d5]/40 bg-[#faf8ff]/85 px-5 py-4 backdrop-blur-md">
+    <div className="min-h-screen bg-[#faf8ff] pb-36 text-[#1a1b22]">
+      <header className="sticky top-0 z-50 border-b border-[#c4c6d5]/40 bg-[#faf8ff]/90 px-4 py-3 backdrop-blur-md sm:px-5 sm:py-4">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#747685]">
               Mock Investing
             </p>
-            <h1 className="text-2xl font-bold text-[#344e5d]">Portfolio</h1>
+            <h1 className="text-xl font-bold text-[#344e5d] sm:text-2xl">
+              Portfolio
+            </h1>
           </div>
           <Link
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-[#344e5d] hover:bg-[#344e5d]/5"
+            className="rounded-lg px-2.5 py-2 text-sm font-semibold text-[#344e5d] hover:bg-[#344e5d]/5 sm:px-3"
             href="/dashboard"
           >
             Dashboard
@@ -148,7 +154,7 @@ export default function PortfolioPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 pt-8">
+      <main className="mx-auto max-w-5xl space-y-5 px-3 pt-5 sm:space-y-6 sm:px-4 sm:pt-8">
         {error && (
           <div className="rounded-xl border border-[#ba1a1a]/20 bg-[#ffdad6]/35 p-4 text-sm font-semibold text-[#ba1a1a]">
             {error}
@@ -160,34 +166,42 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        <section className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {supportedMarkets.map((market) => (
-            <button
-              className={`rounded-xl border px-3 py-3 text-left transition-colors ${
-                selectedMarket === market.market
-                  ? "border-[#344e5d] bg-[#344e5d] text-white shadow-sm"
-                  : "border-[#c4c6d5]/30 bg-white text-[#434653] hover:border-[#344e5d]/40"
-              }`}
-              key={market.market}
-              onClick={() => setSelectedMarket(market.market)}
-              type="button"
-            >
-              <span className="block text-sm font-bold">{market.symbol}</span>
-              <span className="mt-1 block text-[10px] font-semibold uppercase opacity-75">
-                {market.label}
-              </span>
-            </button>
-          ))}
+        <section className="-mx-3 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0">
+          <div className="flex min-w-max gap-2 sm:grid sm:min-w-0 sm:grid-cols-5">
+            {supportedMarkets.map((market) => (
+              <button
+                className={`min-w-[96px] rounded-xl border px-3 py-2.5 text-left transition-colors sm:min-w-0 sm:py-3 ${
+                  selectedMarket === market.market
+                    ? "border-[#344e5d] bg-[#344e5d] text-white shadow-sm"
+                    : "border-[#c4c6d5]/30 bg-white text-[#434653] hover:border-[#344e5d]/40"
+                }`}
+                key={market.market}
+                onClick={() => setSelectedMarket(market.market)}
+                type="button"
+              >
+                <span className="block text-sm font-bold leading-none">
+                  {market.symbol}
+                </span>
+                <span className="mt-1.5 block truncate text-[10px] font-semibold uppercase opacity-75">
+                  {market.label}
+                </span>
+              </button>
+            ))}
+          </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <SummaryCard
+            className="col-span-2 md:col-span-1"
             label="Available Points"
             value={formatPoints(portfolio?.points ?? 0)}
           />
           <SummaryCard
             label={`${marketInfo.symbol} Position`}
-            value={formatCoin(portfolio?.position.quantity ?? 0, marketInfo.symbol)}
+            value={formatCoin(
+              portfolio?.position.quantity ?? 0,
+              marketInfo.symbol,
+            )}
           />
           <SummaryCard
             label="Total Asset Value"
@@ -195,23 +209,23 @@ export default function PortfolioPage() {
           />
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-xl border border-[#c4c6d5]/30 bg-white p-6 shadow-sm">
+        <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr] lg:gap-6">
+          <div className="rounded-xl border border-[#c4c6d5]/30 bg-white p-4 shadow-sm sm:p-6">
             <div className="flex items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#747685]">
                   {marketInfo.market}
                 </p>
-                <h2 className="mt-1 text-3xl font-bold text-[#1a1b22]">
+                <h2 className="mt-1 break-words text-2xl font-bold text-[#1a1b22] sm:text-3xl">
                   {formatKrw(portfolio?.ticker.tradePrice ?? 0)}
                 </h2>
               </div>
-              <div className="rounded-full bg-[#ededf7] px-3 py-1 text-xs font-bold text-[#344e5d]">
+              <div className="shrink-0 rounded-full bg-[#ededf7] px-3 py-1 text-xs font-bold text-[#344e5d]">
                 Upbit
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:mt-6 sm:gap-4">
               <Metric
                 label="Average Buy Price"
                 value={formatKrw(portfolio?.position.averageBuyPrice ?? 0)}
@@ -240,7 +254,7 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-[#c4c6d5]/30 bg-white p-6 shadow-sm">
+          <div className="rounded-xl border border-[#c4c6d5]/30 bg-white p-4 shadow-sm sm:p-6">
             <h2 className="text-lg font-bold text-[#1a1b22]">
               Trade {marketInfo.symbol}
             </h2>
@@ -296,7 +310,7 @@ export default function PortfolioPage() {
             </div>
 
             <button
-              className="mt-6 w-full rounded-xl bg-[#344e5d] py-4 font-bold uppercase text-white shadow-md transition-colors hover:bg-[#4c6676] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-xl bg-[#344e5d] px-3 py-4 text-sm font-bold uppercase text-white shadow-md transition-colors hover:bg-[#4c6676] disabled:cursor-not-allowed disabled:opacity-50 sm:text-base"
               disabled={
                 submitting ||
                 (side === "sell" &&
@@ -306,8 +320,8 @@ export default function PortfolioPage() {
               type="button"
             >
               {submitting
-                  ? "Submitting..."
-                  : side === "buy"
+                ? "Submitting..."
+                : side === "buy"
                   ? `Buy ${marketInfo.symbol} with points`
                   : `Sell ${marketInfo.symbol} for points`}
             </button>
@@ -355,13 +369,25 @@ export default function PortfolioPage() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function SummaryCard({
+  className = "",
+  label,
+  value,
+}: {
+  className?: string;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-xl border border-[#c4c6d5]/30 bg-white p-5 shadow-sm">
+    <div
+      className={`rounded-xl border border-[#c4c6d5]/30 bg-white p-4 shadow-sm sm:p-5 ${className}`}
+    >
       <p className="text-xs font-bold uppercase tracking-wide text-[#747685]">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold text-[#1a1b22]">{value}</p>
+      <p className="mt-2 break-words text-xl font-bold text-[#1a1b22] sm:text-2xl">
+        {value}
+      </p>
     </div>
   );
 }
@@ -383,11 +409,13 @@ function Metric({
         : "text-[#1a1b22]";
 
   return (
-    <div className="rounded-lg bg-[#f3f3fd] p-4">
+    <div className="rounded-lg bg-[#f3f3fd] p-3 sm:p-4">
       <p className="text-xs font-bold uppercase tracking-wide text-[#747685]">
         {label}
       </p>
-      <p className={`mt-1 text-lg font-bold ${toneClass}`}>{value}</p>
+      <p className={`mt-1 break-words text-sm font-bold sm:text-lg ${toneClass}`}>
+        {value}
+      </p>
     </div>
   );
 }
