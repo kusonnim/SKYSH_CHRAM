@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { fetchUpbitCandles } from "@/server/upbit";
 import { sortCandlesOldestFirst, createMaxVolumeQuestion } from "@/domain";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     // Fetch 100 daily candles for KRW-BTC

@@ -64,6 +64,26 @@ export default function StagePage() {
     }
   }
 
+  async function handleContinue() {
+    if (!stageSession) return;
+    try {
+      const response = await fetch("/api/progress/stage-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stageId: stageSession.stage.id }),
+      });
+      if (response.ok) {
+        router.push("/dashboard");
+      } else {
+        console.error("Failed to complete stage");
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.error("Error completing stage:", err);
+      router.push("/dashboard");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -97,6 +117,14 @@ export default function StagePage() {
   return (
     <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8 lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:space-y-0">
       <section className="space-y-6">
+        <div>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors"
+          >
+            ← 대시보드로 돌아가기
+          </button>
+        </div>
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Stage</p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-950">{stageSession.stage.title}</h1>
@@ -115,7 +143,7 @@ export default function StagePage() {
 
       <aside className="space-y-6">
         <QuestionPanel prompt={question.prompt} selectedIndex={selectedIndex} onSubmit={handleSubmit} />
-        <FeedbackBox result={feedback} />
+        <FeedbackBox result={feedback} onContinue={handleContinue} />
       </aside>
     </main>
   );

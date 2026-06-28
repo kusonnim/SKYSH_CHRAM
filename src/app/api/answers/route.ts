@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { gradeSelectCandleAnswer, createBasicFeedback } from "@/domain";
+import { gradeSelectCandleAnswer, createFeedback } from "@/domain";
 import type { SubmitAnswerRequest, AnswerResult } from "@/types";
 
 export async function POST(request: Request) {
@@ -24,7 +24,8 @@ export async function POST(request: Request) {
     const gradingResult = gradeSelectCandleAnswer(selectedCandleIndex, correctCandleIndex);
     
     // Generate feedback message
-    const feedback = createBasicFeedback(gradingResult.isCorrect, gradingResult.mistakeCode);
+    // Note: Assuming questionId matches stageId for MVP routing.
+    const feedback = createFeedback(gradingResult.isCorrect, gradingResult.mistakeCode, body.questionId);
 
     const result: AnswerResult = {
       isCorrect: gradingResult.isCorrect,
