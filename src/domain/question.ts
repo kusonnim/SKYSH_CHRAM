@@ -31,14 +31,13 @@ export function findLongestBodyCandleIndex(candles: Candle[]): number {
     return -1;
   }
 
-  return candles.reduce(
-    (longestBodyIndex, candle, index) => {
-      const currentBodySize = Math.abs(candle.open - candle.close);
-      const longestBodySize = Math.abs(candles[longestBodyIndex].open - candles[longestBodyIndex].close);
-      return currentBodySize > longestBodySize ? index : longestBodyIndex;
-    },
-    0,
-  );
+  return candles.reduce((longestBodyIndex, candle, index) => {
+    const currentBodySize = Math.abs(candle.open - candle.close);
+    const longestBodySize = Math.abs(
+      candles[longestBodyIndex].open - candles[longestBodyIndex].close,
+    );
+    return currentBodySize > longestBodySize ? index : longestBodyIndex;
+  }, 0);
 }
 
 export function createLongestBodyQuestion(candles: Candle[]): Question {
@@ -48,7 +47,7 @@ export function createLongestBodyQuestion(candles: Candle[]): Question {
     stageId: "longest-body-candle",
     market: "KRW-BTC",
     timeframe: "day",
-    prompt: "가장 몸통이 긴 캔들을 선택하세요.",
+    prompt: "Select the candle with the largest body.",
     candles,
     answer: {
       correctIndex: findLongestBodyCandleIndex(candles),

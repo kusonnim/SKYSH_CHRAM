@@ -6,6 +6,17 @@
 
 body {
   margin: 0;
-  background: #f8fafc;
-  color: #0f172a;
+  background: #faf8ff;
+  color: #1a1b22;
+}
+
+@keyframes soft-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
 }

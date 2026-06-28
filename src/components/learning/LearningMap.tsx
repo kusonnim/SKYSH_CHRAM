@@ -3,20 +3,20 @@ import { ChapterSection } from "./ChapterSection";
 
 type LearningMapProps = {
   chapters: Chapter[];
-  onSelectStage: (stageId: string) => void;
 };
 
-export function LearningMap({ chapters, onSelectStage }: LearningMapProps) {
+export function LearningMap({ chapters }: LearningMapProps) {
+  if (chapters.length === 0) {
+    return null;
+  }
+
   return (
-    <div className="space-y-6">
-      {chapters.map((chapter) => (
-        <ChapterSection
-          chapter={chapter}
-          key={chapter.id}
-          onSelectStage={onSelectStage}
-        />
-      ))}
+    <div className="w-full space-y-20">
+      {[...chapters]
+        .sort((a, b) => a.order - b.order)
+        .map((chapter) => (
+          <ChapterSection chapter={chapter} key={chapter.id} />
+        ))}
     </div>
   );
 }
-

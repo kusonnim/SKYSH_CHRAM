@@ -13,9 +13,11 @@ export function applyMockProgress(
 }
 
 export function getNextStageId(learningMap: LearningMap, currentStageId: string): string | null {
-  const allStages = learningMap.chapters
+  const allStages = [...learningMap.chapters]
     .sort((a, b) => a.order - b.order)
-    .flatMap((chapter) => chapter.stages.sort((a, b) => a.order - b.order));
+    .flatMap((chapter) =>
+      [...chapter.stages].sort((a, b) => a.order - b.order),
+    );
 
   const currentIndex = allStages.findIndex((stage) => stage.id === currentStageId);
 
