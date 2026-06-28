@@ -9,6 +9,7 @@ import {
   CandlestickData,
   HistogramData,
   Time,
+  SeriesMarker,
 } from "lightweight-charts";
 import type { Candle } from "@/types";
 
