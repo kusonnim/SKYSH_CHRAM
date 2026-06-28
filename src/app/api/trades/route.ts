@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isSupportedMarket } from "@/domain/markets";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchUpbitTicker } from "@/server/upbit";
 import type {
@@ -9,7 +10,6 @@ import type {
   TradeSide,
 } from "@/types";
 
-const MARKET = "KRW-BTC";
 const MIN_TRADE_POINTS = 10;
 
 type ProfileRow = {
@@ -36,8 +36,10 @@ function buildPortfolioSummary({
   quantity,
   tradePrice,
   timestamp,
+  market,
 }: {
   averageBuyPrice: number;
+  market: string;
   points: number;
   quantity: number;
   tradePrice: number;
@@ -50,7 +52,7 @@ function buildPortfolioSummary({
     investedPoints > 0 ? (unrealizedProfit / investedPoints) * 100 : 0;
 
   return {
-    market: MARKET,
+    market,
     points,
     position: {
       quantity,
@@ -92,8 +94,22 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as Partial<SubmitTradeRequest>;
+    const market = body.market;
     const side = body.side;
     const pointsAmount = Math.floor(toNumber(body.pointsAmount));
+
+    if (!isSupportedMarket(market)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "Unsupported market.",
+          },
+        },
+        { status: 400 },
+      );
+    }
 
     if (!isTradeSide(side)) {
       return NextResponse.json(
@@ -175,7 +191,7 @@ export async function POST(request: Request) {
       .from("portfolio_positions")
       .select("quantity, average_buy_price")
       .eq("user_id", user.id)
-      .eq("market", MARKET)
+      .eq("market", market)
       .maybeSingle<PositionRow>();
 
     if (positionError) {
@@ -191,7 +207,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const ticker = await fetchUpbitTicker(MARKET);
+    const ticker = await fetchUpbitTicker(market);
     const currentQuantity = toNumber(position?.quantity);
     const currentAverageBuyPrice = toNumber(position?.average_buy_price);
     const tradeQuantity = pointsAmount / ticker.tradePrice;
@@ -207,7 +223,7 @@ export async function POST(request: Request) {
             success: false,
             error: {
               code: "INSUFFICIENT_POINTS",
-              message: "Not enough points to buy BTC.",
+              message: "Not enough points to buy this coin.",
             },
           },
           { status: 400 },
@@ -226,7 +242,7 @@ export async function POST(request: Request) {
             success: false,
             error: {
               code: "INSUFFICIENT_POSITION",
-              message: "Not enough BTC to sell.",
+              message: "Not enough position to sell.",
             },
           },
           { status: 400 },
@@ -267,7 +283,7 @@ export async function POST(request: Request) {
       .upsert(
         {
           user_id: user.id,
-          market: MARKET,
+          market,
           quantity: nextQuantity,
           average_buy_price: nextAverageBuyPrice,
           updated_at: new Date().toISOString(),
@@ -292,7 +308,7 @@ export async function POST(request: Request) {
       .from("trade_orders")
       .insert({
         user_id: user.id,
-        market: MARKET,
+        market,
         side,
         price: ticker.tradePrice,
         quantity: tradeQuantity,
@@ -313,13 +329,14 @@ export async function POST(request: Request) {
     }
 
     const result: TradeResult = {
-      market: MARKET,
+      market,
       side,
       price: ticker.tradePrice,
       quantity: tradeQuantity,
       pointsAmount,
       portfolio: buildPortfolioSummary({
         averageBuyPrice: nextAverageBuyPrice,
+        market,
         points: nextPoints,
         quantity: nextQuantity,
         tradePrice: ticker.tradePrice,

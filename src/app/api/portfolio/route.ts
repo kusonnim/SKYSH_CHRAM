@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 
+import { findSupportedMarket } from "@/domain/markets";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchUpbitTicker } from "@/server/upbit";
 import type { PortfolioSummary } from "@/types";
-
-const MARKET = "KRW-BTC";
 
 function toNumber(value: unknown): number {
   const numberValue = Number(value ?? 0);
   return Number.isFinite(numberValue) ? numberValue : 0;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const selectedMarket = findSupportedMarket(url.searchParams.get("market"));
     const supabase = await createSupabaseServerClient();
     const {
       data: { user },
@@ -87,7 +88,7 @@ export async function GET() {
       .from("portfolio_positions")
       .select("quantity, average_buy_price")
       .eq("user_id", user.id)
-      .eq("market", MARKET)
+      .eq("market", selectedMarket.market)
       .maybeSingle();
 
     if (positionError) {
@@ -103,7 +104,7 @@ export async function GET() {
       );
     }
 
-    const ticker = await fetchUpbitTicker(MARKET);
+    const ticker = await fetchUpbitTicker(selectedMarket.market);
     const quantity = toNumber(position?.quantity);
     const averageBuyPrice = toNumber(position?.average_buy_price);
     const positionValue = quantity * ticker.tradePrice;
@@ -113,7 +114,7 @@ export async function GET() {
       investedPoints > 0 ? (unrealizedProfit / investedPoints) * 100 : 0;
 
     const data: PortfolioSummary = {
-      market: MARKET,
+      market: selectedMarket.market,
       points,
       position: {
         quantity,

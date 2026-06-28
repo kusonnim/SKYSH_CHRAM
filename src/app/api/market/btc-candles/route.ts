@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { sortCandlesOldestFirst } from "@/domain";
+import { findSupportedMarket } from "@/domain/markets";
 import { fetchUpbitCandles } from "@/server/upbit";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const selectedMarket = findSupportedMarket(url.searchParams.get("market"));
     const candles = await fetchUpbitCandles({
-      market: "KRW-BTC",
+      market: selectedMarket.market,
       timeframe: "day",
       count: 60,
     });
@@ -14,7 +17,7 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       data: {
-        market: "KRW-BTC",
+        market: selectedMarket.market,
         timeframe: "day",
         candles: sortCandlesOldestFirst(candles),
       },
@@ -24,8 +27,8 @@ export async function GET() {
       {
         success: false,
         error: {
-          code: "BTC_CANDLES_READ_FAILED",
-          message: error.message || "Unable to load BTC candles.",
+          code: "MARKET_CANDLES_READ_FAILED",
+          message: error.message || "Unable to load market candles.",
         },
       },
       { status: 500 },
