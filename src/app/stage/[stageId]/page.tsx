@@ -6,7 +6,7 @@ import { CandleChart } from "@/components/chart";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { staticLearningMap } from "@/content/curriculum";
 import { markStageCompleted } from "@/lib/learning-progress";
-import type { AnswerResult, StageSession } from "@/types";
+import type { AnswerResult, StageCompleteResponse, StageSession } from "@/types";
 
 export default function StagePage() {
   const params = useParams();
@@ -18,6 +18,10 @@ export default function StagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stageCompleted, setStageCompleted] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  const [completion, setCompletion] = useState<StageCompleteResponse | null>(
+    null,
+  );
   const [nextStageId, setNextStageId] = useState<string | null>(null);
   const router = useRouter();
 
@@ -30,6 +34,8 @@ export default function StagePage() {
     setSelectedIndex(null);
     setFeedback(null);
     setStageCompleted(false);
+    setAdvancing(false);
+    setCompletion(null);
     setNextStageId(null);
 
     fetch(`/api/stages/${stageId}`)
@@ -101,13 +107,19 @@ export default function StagePage() {
       });
       if (response.ok) {
         const data = await response.json();
+        const completionData = data.data as StageCompleteResponse;
         const storedNextStageId = markStageCompleted(
           staticLearningMap,
           stageSession.stage.id,
         );
-        const resolvedNextStageId = data.data?.nextStageId ?? storedNextStageId;
+        const resolvedNextStageId =
+          completionData?.nextStageId ?? storedNextStageId;
+        setCompletion(completionData);
         if (resolvedNextStageId) {
-          router.push(`/stage/${resolvedNextStageId}`);
+          setAdvancing(true);
+          window.setTimeout(() => {
+            router.push(`/stage/${resolvedNextStageId}`);
+          }, 900);
           return;
         }
 
@@ -120,6 +132,30 @@ export default function StagePage() {
       console.error("Error completing stage:", err);
       router.push("/dashboard");
     }
+  }
+
+  if (advancing && completion) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6">
+        <div className="rounded-xl border border-[#c4c6d5] bg-white p-8 text-center shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#747685]">
+            Stage cleared
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-[#1a1b22]">
+            +{completion.pointsAwarded.toLocaleString()} P earned
+          </h2>
+          <p className="mt-2 text-sm text-[#434653]">
+            Total points: {completion.totalPoints.toLocaleString()} P
+          </p>
+          {completion.alreadyCompleted && (
+            <p className="mt-3 text-xs font-semibold text-[#747685]">
+              This stage was already completed, so no extra points were awarded.
+            </p>
+          )}
+          <div className="mx-auto mt-6 h-8 w-8 animate-spin rounded-full border-4 border-[#c4c6d5] border-t-[#344e5d]" />
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
@@ -160,6 +196,25 @@ export default function StagePage() {
           <p className="mt-2 text-[#434653]">
             Great work. You completed every question in this stage.
           </p>
+          {completion && (
+            <div className="mt-6 rounded-xl bg-[#e8e7f1] p-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#747685]">
+                Points earned
+              </p>
+              <p className="mt-1 text-3xl font-bold text-[#344e5d]">
+                +{completion.pointsAwarded.toLocaleString()} P
+              </p>
+              <p className="mt-1 text-sm text-[#434653]">
+                Total points: {completion.totalPoints.toLocaleString()} P
+              </p>
+              {completion.alreadyCompleted && (
+                <p className="mt-2 text-xs font-semibold text-[#747685]">
+                  This stage was already completed, so no extra points were
+                  awarded.
+                </p>
+              )}
+            </div>
+          )}
           <div className="mt-8 flex justify-center gap-4">
             <button
               className="rounded-lg border border-[#c4c6d5] px-4 py-2 font-medium text-[#434653] hover:bg-[#ededf7]"
