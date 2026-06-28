@@ -5,9 +5,28 @@ export type GradeSelectCandleAnswerResult = {
 };
 
 export function gradeSelectCandleAnswer(
-  _selectedIndex: number,
-  _correctIndex: number,
+  selectedIndex: number,
+  correctIndex: number,
 ): GradeSelectCandleAnswerResult {
-  throw new Error("TODO: implement gradeSelectCandleAnswer in the domain layer.");
-}
+  if (!Number.isInteger(selectedIndex) || !Number.isInteger(correctIndex)) {
+    return {
+      isCorrect: false,
+      score: 0,
+      mistakeCode: "invalid_selection",
+    };
+  }
 
+  if (selectedIndex !== correctIndex) {
+    return {
+      isCorrect: false,
+      score: 0,
+      mistakeCode: "wrong_candle",
+    };
+  }
+
+  return {
+    isCorrect: true,
+    score: 100,
+    mistakeCode: null,
+  };
+}
