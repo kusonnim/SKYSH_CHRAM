@@ -29,11 +29,9 @@ export default function StagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stageCompleted, setStageCompleted] = useState(false);
-  const [advancing, setAdvancing] = useState(false);
   const [completion, setCompletion] = useState<StageCompleteResponse | null>(
     null,
   );
-  const [nextStageId, setNextStageId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -45,9 +43,7 @@ export default function StagePage() {
     setSelectedIndex(null);
     setFeedback(null);
     setStageCompleted(false);
-    setAdvancing(false);
     setCompletion(null);
-    setNextStageId(null);
 
     fetch(`/api/stages/${stageId}`)
       .then((res) => res.json())
@@ -125,16 +121,9 @@ export default function StagePage() {
       }
 
       const completionData = data.data as StageCompleteResponse;
-      const storedNextStageId = markStageCompleted(
-        staticLearningMap,
-        stageSession.stage.id,
-      );
+      markStageCompleted(staticLearningMap, stageSession.stage.id);
       setCompletion(completionData);
-      setNextStageId(completionData?.nextStageId ?? storedNextStageId);
-      setAdvancing(true);
-      window.setTimeout(() => {
-        router.push("/dashboard");
-      }, 900);
+      setStageCompleted(true);
     } catch (err) {
       console.error("Error completing stage:", err);
       setError(
@@ -143,33 +132,6 @@ export default function StagePage() {
           : "Failed to save stage progress. Please try again.",
       );
     }
-  }
-
-  if (advancing && completion) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6">
-        <div className="rounded-xl border border-[#c4c6d5] bg-white p-8 text-center shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#747685]">
-            Stage cleared
-          </p>
-          <h2 className="mt-2 text-2xl font-bold text-[#1a1b22]">
-            +{completion.pointsAwarded.toLocaleString()} P earned
-          </h2>
-          <p className="mt-2 text-sm text-[#434653]">
-            Total points: {completion.totalPoints.toLocaleString()} P
-          </p>
-          {completion.alreadyCompleted && (
-            <p className="mt-3 text-xs font-semibold text-[#747685]">
-              This stage was already completed, so no extra points were awarded.
-            </p>
-          )}
-          <p className="mt-3 text-sm font-semibold text-[#434653]">
-            Returning to dashboard...
-          </p>
-          <div className="mx-auto mt-6 h-8 w-8 animate-spin rounded-full border-4 border-[#c4c6d5] border-t-[#344e5d]" />
-        </div>
-      </div>
-    );
   }
 
   if (loading) {
@@ -205,10 +167,16 @@ export default function StagePage() {
   if (stageCompleted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#faf8ff] px-6">
-        <div className="rounded-xl border border-[#c4c6d5] bg-white p-8 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-[#1a1b22]">Stage complete</h2>
+        <div className="w-full max-w-xl rounded-xl border border-[#c4c6d5] bg-white p-8 text-center shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#747685]">
+            Stage cleared
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-[#1a1b22]">
+            방금 배운 패턴을 써볼까요?
+          </h2>
           <p className="mt-2 text-[#434653]">
-            Great work. You completed every question in this stage.
+            획득한 포인트로 모의투자를 해보거나, 대시보드로 돌아갈 수
+            있어요.
           </p>
           {completion && (
             <div className="mt-6 rounded-xl bg-[#e8e7f1] p-4">
@@ -229,23 +197,21 @@ export default function StagePage() {
               )}
             </div>
           )}
-          <div className="mt-8 flex justify-center gap-4">
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <button
-              className="rounded-lg border border-[#c4c6d5] px-4 py-2 font-medium text-[#434653] hover:bg-[#ededf7]"
+              className="rounded-lg bg-[#344e5d] px-5 py-3 font-bold text-white hover:bg-[#4c6676]"
+              onClick={() => router.push("/portfolio")}
+              type="button"
+            >
+              모의투자 해보기
+            </button>
+            <button
+              className="rounded-lg border border-[#c4c6d5] px-5 py-3 font-bold text-[#434653] hover:bg-[#ededf7]"
               onClick={() => router.push("/dashboard")}
               type="button"
             >
-              Back to dashboard
+              그냥 돌아가기
             </button>
-            {nextStageId && (
-              <button
-                className="rounded-lg bg-[#344e5d] px-4 py-2 font-medium text-white hover:bg-[#4c6676]"
-                onClick={() => router.push(`/stage/${nextStageId}`)}
-                type="button"
-              >
-                Start next stage
-              </button>
-            )}
           </div>
         </div>
       </div>
