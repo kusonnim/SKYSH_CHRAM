@@ -1,20 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { CandleChart } from "@/components/chart";
 import { QuestionPanel } from "@/components/QuestionPanel";
 import { FeedbackBox } from "@/components/FeedbackBox";
-import type { Stage, StageSession, AnswerResult } from "@/types";
+import type { StageSession, AnswerResult } from "@/types";
 
-type StagePageProps = {
-  params: {
-    stageId: string;
-  };
-};
-
-export default function StagePage({ params }: StagePageProps) {
-  const { stageId } = params;
+export default function StagePage() {
+  const params = useParams();
+  const stageId = params?.stageId;
   const [stageSession, setStageSession] = useState<StageSession | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<AnswerResult | null>(null);
