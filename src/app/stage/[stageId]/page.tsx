@@ -259,7 +259,7 @@ export default function StagePage() {
   const stageNumber = getStageNumber(stageSession.stage.id);
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] pb-40 text-[#1a1b22]">
+    <div className="min-h-screen bg-[#faf8ff] text-[#1a1b22]">
       <header className="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-[#c4c6d5]/40 bg-white px-4">
         <div className="flex items-center gap-3">
           <button
@@ -279,7 +279,7 @@ export default function StagePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg space-y-6 px-4 pt-20">
+      <main className="mx-auto max-w-lg space-y-6 px-4 pb-60 pt-20">
         <header className="space-y-1">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#344e5d]">
             Stage {stageNumber}
