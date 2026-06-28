@@ -41,7 +41,8 @@ export async function POST(request: Request) {
     // 3. Fetch real-time BTC price from Upbit
     let price: number;
     try {
-      price = await fetchUpbitTicker("KRW-BTC");
+      const ticker = await fetchUpbitTicker("KRW-BTC");
+      price = ticker.tradePrice;
     } catch (tickerError: any) {
       return NextResponse.json(
         {

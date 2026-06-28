@@ -46,3 +46,39 @@ export type AnswerResult = {
   score: number;
   feedback: string;
 };
+
+export type PortfolioSummary = {
+  market: "KRW-BTC";
+  points: number;
+  position: {
+    quantity: number;
+    averageBuyPrice: number;
+  };
+  ticker: {
+    tradePrice: number;
+    timestamp: number;
+  };
+  valuation: {
+    positionValue: number;
+    investedPoints: number;
+    unrealizedProfit: number;
+    unrealizedProfitRate: number;
+    totalAssetValue: number;
+  };
+};
+
+export type TradeSide = "buy" | "sell";
+
+export type SubmitTradeRequest = {
+  side: TradeSide;
+  pointsAmount: number;
+};
+
+export type TradeResult = {
+  market: "KRW-BTC";
+  side: TradeSide;
+  price: number;
+  quantity: number;
+  pointsAmount: number;
+  portfolio: PortfolioSummary;
+};

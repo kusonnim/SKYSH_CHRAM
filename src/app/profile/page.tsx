@@ -8,8 +8,7 @@ import {
   ProfileEditForm,
 } from "@/components/profile";
 import { LogoutButton } from "@/components/auth";
-import { readProgress } from "@/lib/learning-progress";
-import { staticLearningMap } from "@/content/curriculum";
+import type { LearningMap, PortfolioSummary } from "@/types";
 
 type ProfileData = {
   avatarUrl?: string | null;
@@ -23,6 +22,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("");
   const [joinedAt, setJoinedAt] = useState("");
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [completedLessons, setCompletedLessons] = useState(0);
   const [progressPercent, setProgressPercent] = useState(0);
@@ -57,10 +57,28 @@ export default function ProfilePage() {
       });
 
       try {
-        const response = await fetch("/api/profile");
-        const data = await response.json();
+        const [profileResponse, portfolioResponse, learningMapResponse] =
+          await Promise.all([
+            fetch("/api/profile"),
+            fetch("/api/portfolio"),
+            fetch("/api/learning-map"),
+          ]);
+        const [data, portfolioData, learningMapData] = await Promise.all([
+          profileResponse.json(),
+          portfolioResponse.json(),
+          learningMapResponse.json(),
+        ]);
+
         if (data.success) {
           setProfile(data.data);
+        }
+
+        if (portfolioData.success) {
+          setPortfolio(portfolioData.data);
+        }
+
+        if (learningMapData.success) {
+          setLearningProgress(learningMapData.data);
         }
       } catch (error) {
         console.error("Unable to load profile API data.", error);
@@ -69,16 +87,18 @@ export default function ProfilePage() {
       }
     }
 
-    function loadProgress() {
-      const progress = readProgress();
-      const completedCount = progress.completedStageIds.length;
-      const totalStages = staticLearningMap.chapters.reduce(
+    function setLearningProgress(learningMap: LearningMap) {
+      const stages = learningMap.chapters.flatMap((chapter) => chapter.stages);
+      const completedCount = stages.filter(
+        (stage) => stage.status === "completed",
+      ).length;
+      const totalStages = learningMap.chapters.reduce(
         (acc, chapter) => acc + chapter.stages.length,
-        0
+        0,
       );
       setCompletedLessons(completedCount);
       setProgressPercent(
-        totalStages > 0 ? Math.round((completedCount / totalStages) * 100) : 0
+        totalStages > 0 ? Math.round((completedCount / totalStages) * 100) : 0,
       );
 
       const mods = staticLearningMap.chapters.map((chapter, i) => {
@@ -101,7 +121,6 @@ export default function ProfilePage() {
     }
 
     loadProfile();
-    loadProgress();
   }, [supabase]);
 
   const nickname = profile?.nickname ?? "Chart Learner";
@@ -141,7 +160,7 @@ export default function ProfilePage() {
           completedLessons={completedLessons}
           progressPercent={progressPercent}
           streakDays={1}
-          totalXp={completedLessons > 0 ? completedLessons * 50 : 0}
+          totalXp={portfolio?.points ?? 0}
           moduleProgress={moduleProgress}
         />
 
@@ -173,14 +192,21 @@ export default function ProfilePage() {
 
       <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-[#c4c6d5]/40 bg-[#faf8ff]/80 px-4 shadow-lg backdrop-blur-md">
         <a
-          className="flex flex-col items-center justify-center px-6 py-1 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-90"
+          className="flex flex-col items-center justify-center px-4 py-1 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-90"
           href="/dashboard"
         >
           <span className="text-lg font-bold">L</span>
           <span className="mt-1 text-[10px] font-bold uppercase">Learn</span>
         </a>
         <a
-          className="flex flex-col items-center justify-center rounded-xl bg-[#4c6676] px-8 py-1 text-[#c8e3f6] active:scale-90"
+          className="flex flex-col items-center justify-center px-4 py-1 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-90"
+          href="/portfolio"
+        >
+          <span className="text-lg font-bold">B</span>
+          <span className="mt-1 text-[10px] font-bold uppercase">Invest</span>
+        </a>
+        <a
+          className="flex flex-col items-center justify-center rounded-xl bg-[#4c6676] px-6 py-1 text-[#c8e3f6] active:scale-90"
           href="/profile"
         >
           <span className="text-lg font-bold">P</span>

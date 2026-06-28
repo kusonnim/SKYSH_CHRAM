@@ -10,4 +10,7 @@ export type StageCompleteResponse = {
   stageId: string;
   status: "completed";
   nextStageId: string | null;
+  pointsAwarded: number;
+  alreadyCompleted: boolean;
+  totalPoints: number;
 };
