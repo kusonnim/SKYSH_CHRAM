@@ -8,7 +8,10 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const isAuthPage = url.pathname === "/login" || url.pathname === "/signup";
   const isProtectedPage =
-    url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/stage");
+    url.pathname === "/dashboard" ||
+    url.pathname.startsWith("/dashboard/") ||
+    url.pathname === "/stage" ||
+    url.pathname.startsWith("/stage/");
 
   if (isProtectedPage && !user) {
     url.pathname = "/login";
@@ -24,6 +27,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/stage/:path*", "/login", "/signup"],
+  matcher: [
+    "/dashboard",
+    "/dashboard/:path*",
+    "/stage",
+    "/stage/:path*",
+    "/login",
+    "/signup",
+  ],
 };
-

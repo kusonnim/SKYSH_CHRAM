@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LearningMap } from "@/components/learning";
+import { Header } from "@/components/auth";
 import type { LearningMap as LearningMapType } from "@/types";
 
 export default function DashboardPage() {
@@ -54,23 +55,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl space-y-6 px-6 py-8">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Learning Path</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-950">Dashboard</h1>
+    <div className="min-h-screen bg-slate-50">
+      <Header />
+      <main className="mx-auto max-w-6xl space-y-6 px-6 py-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.24em] text-slate-500">Learning Path</p>
+              <h1 className="mt-2 text-3xl font-semibold text-slate-950">Dashboard</h1>
+            </div>
+            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+              Real BTC volume lessons
+            </div>
           </div>
-          <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
-            Real BTC volume lessons
-          </div>
-        </div>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600">
-          Select a stage below to open a chart-based question and build your candle-reading skills.
-        </p>
-      </section>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600">
+            Select a stage below to open a chart-based question and build your candle-reading skills.
+          </p>
+        </section>
 
-      <LearningMap chapters={learningMap.chapters} onSelectStage={handleSelectStage} />
-    </main>
+        <LearningMap chapters={learningMap.chapters} onSelectStage={handleSelectStage} />
+      </main>
+    </div>
   );
 }
+

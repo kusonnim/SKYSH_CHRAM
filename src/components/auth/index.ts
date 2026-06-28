@@ -3,3 +3,5 @@ export * from "./AuthRedirectLink";
 export * from "./AuthForm";
 export * from "./LogoutButton";
 export * from "./AuthSubmitButton";
+export * from "./Header";
+
