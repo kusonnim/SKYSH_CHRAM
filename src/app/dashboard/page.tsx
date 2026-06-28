@@ -1,27 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CandleChart } from "@/components/CandleChart";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { QuestionPanel } from "@/components/QuestionPanel";
-import { mockAnswerResult, mockQuestion } from "@/lib/mock-data";
+import type { Question, AnswerResult } from "@/types";
 
 export default function DashboardPage() {
+  const [question, setQuestion] = useState<Question | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [feedback, setFeedback] = useState(mockAnswerResult);
+  const [feedback, setFeedback] = useState<AnswerResult | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  function handleSubmit() {
-    setSubmitted(true);
-    setFeedback({
-      ...mockAnswerResult,
-      feedback:
-        selectedIndex === mockQuestion.answer?.correctIndex
-          ? "Great job! You correctly identified the highest-volume candle."
-          : "That candle is not the highest-volume candle. Compare the volume bars again.",
-      isCorrect: selectedIndex === mockQuestion.answer?.correctIndex,
-      score: selectedIndex === mockQuestion.answer?.correctIndex ? 1 : 0,
-    });
+  // 1. Fetch today's question from the backend API
+  useEffect(() => {
+    fetch("/api/questions/today")
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.success) {
+          setQuestion(resData.data);
+        } else {
+          console.error("Failed to load question:", resData.error);
+        }
+      })
+      .catch((err) => console.error("Error fetching question:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 2. Submit the answer to the backend API
+  async function handleSubmit() {
+    if (selectedIndex === null || !question) return;
+
+    try {
+      const response = await fetch("/api/answers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          questionId: question.id,
+          selectedCandleIndex: selectedIndex,
+          correctCandleIndex: question.answer?.correctIndex,
+        }),
+      });
+
+      const resData = await response.json();
+      if (resData.success) {
+        setFeedback(resData.data);
+      } else {
+        console.error("Failed to submit answer:", resData.error);
+      }
+    } catch (err) {
+      console.error("Error submitting answer:", err);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-800 mx-auto"></div>
+          <p className="mt-4 text-sm text-slate-500">오늘의 차트 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!question) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-red-500">문제를 불러오지 못했습니다. 서버 상태를 확인해 주세요.</p>
+      </div>
+    );
   }
 
   return (
@@ -35,19 +85,22 @@ export default function DashboardPage() {
         </div>
 
         <CandleChart
-          candles={mockQuestion.candles}
+          candles={question.candles}
           selectedIndex={selectedIndex}
-          onSelectCandle={setSelectedIndex}
+          onSelectCandle={(index) => {
+            setSelectedIndex(index);
+            setFeedback(null); // Reset feedback when selecting a new candle
+          }}
         />
       </section>
 
       <aside className="space-y-6">
         <QuestionPanel
-          prompt={mockQuestion.prompt}
+          prompt={question.prompt}
           selectedIndex={selectedIndex}
           onSubmit={handleSubmit}
         />
-        <FeedbackBox result={submitted ? feedback : null} />
+        <FeedbackBox result={feedback} />
       </aside>
     </main>
   );
