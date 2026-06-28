@@ -12,6 +12,16 @@ export function findMaxVolumeCandleIndex(candles: Candle[]): number {
   );
 }
 
-export function createMaxVolumeQuestion(_candles: Candle[]): Question {
-  throw new Error("TODO: implement createMaxVolumeQuestion in the domain layer.");
+export function createMaxVolumeQuestion(candles: Candle[]): Question {
+  return {
+    id: "today-volume-max",
+    type: "select_candle",
+    market: "KRW-BTC",
+    timeframe: "day",
+    prompt: "Select the candle with the highest trading volume.",
+    candles,
+    answer: {
+      correctIndex: findMaxVolumeCandleIndex(candles),
+    },
+  };
 }
