@@ -240,7 +240,6 @@ export function CandleChart({
         position: "aboveBar",
         color: "#4648d4",
         shape: "circle",
-        text: `Selected #${selectedIndex + 1}`,
       });
     }
     if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
@@ -270,14 +269,6 @@ export function CandleChart({
     <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1a1b22]">{title}</h3>
-        {selectable && (
-          <div className="rounded-full bg-[#4648d4]/10 px-3 py-1 text-[10px] font-bold uppercase text-[#434653]">
-            Pick:{" "}
-            <span className="text-[#4648d4]">
-              {selectedIndex === null ? "none" : `Candle #${selectedIndex + 1}`}
-            </span>
-          </div>
-        )}
       </div>
       <div className="overflow-hidden rounded-lg border border-[#c4c6d5]/30 bg-white">
         <div ref={chartContainer} className="h-[360px] w-full" />
