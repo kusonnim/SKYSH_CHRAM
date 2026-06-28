@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { LearningMap } from "@/components/learning";
 import { Header } from "@/components/auth";
-import { applyStoredProgress } from "@/lib/learning-progress";
 import type {
   LearningMap as LearningMapType,
   PortfolioSummary,
@@ -33,7 +32,7 @@ export default function DashboardPage() {
           );
         }
 
-        setLearningMap(applyStoredProgress(learningMapData.data));
+        setLearningMap(learningMapData.data);
         if (portfolioData.success) {
           setPortfolio(portfolioData.data);
         }

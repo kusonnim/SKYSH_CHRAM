@@ -8,9 +8,7 @@ import {
   ProfileEditForm,
 } from "@/components/profile";
 import { LogoutButton } from "@/components/auth";
-import { readProgress } from "@/lib/learning-progress";
-import { staticLearningMap } from "@/content/curriculum";
-import type { PortfolioSummary } from "@/types";
+import type { LearningMap, PortfolioSummary } from "@/types";
 
 type ProfileData = {
   avatarUrl?: string | null;
@@ -58,16 +56,28 @@ export default function ProfilePage() {
       });
 
       try {
-        const response = await fetch("/api/profile");
-        const data = await response.json();
+        const [profileResponse, portfolioResponse, learningMapResponse] =
+          await Promise.all([
+            fetch("/api/profile"),
+            fetch("/api/portfolio"),
+            fetch("/api/learning-map"),
+          ]);
+        const [data, portfolioData, learningMapData] = await Promise.all([
+          profileResponse.json(),
+          portfolioResponse.json(),
+          learningMapResponse.json(),
+        ]);
+
         if (data.success) {
           setProfile(data.data);
         }
 
-        const portfolioResponse = await fetch("/api/portfolio");
-        const portfolioData = await portfolioResponse.json();
         if (portfolioData.success) {
           setPortfolio(portfolioData.data);
+        }
+
+        if (learningMapData.success) {
+          setLearningProgress(learningMapData.data);
         }
       } catch (error) {
         console.error("Unable to load profile API data.", error);
@@ -76,10 +86,12 @@ export default function ProfilePage() {
       }
     }
 
-    function loadProgress() {
-      const progress = readProgress();
-      const completedCount = progress.completedStageIds.length;
-      const totalStages = staticLearningMap.chapters.reduce(
+    function setLearningProgress(learningMap: LearningMap) {
+      const stages = learningMap.chapters.flatMap((chapter) => chapter.stages);
+      const completedCount = stages.filter(
+        (stage) => stage.status === "completed",
+      ).length;
+      const totalStages = learningMap.chapters.reduce(
         (acc, chapter) => acc + chapter.stages.length,
         0,
       );
@@ -90,7 +102,6 @@ export default function ProfilePage() {
     }
 
     loadProfile();
-    loadProgress();
   }, [supabase]);
 
   const nickname = profile?.nickname ?? "Chart Learner";
