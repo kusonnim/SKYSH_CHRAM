@@ -147,7 +147,7 @@ export default function ProfilePage() {
             Back
           </a>
           <h1 className="text-lg font-bold tracking-tight text-[#344e5d] md:text-xl">
-            SKYSH CHRAM
+            Chartine
           </h1>
         </div>
         <LogoutButton />

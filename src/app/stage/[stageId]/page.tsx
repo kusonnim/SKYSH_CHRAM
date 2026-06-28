@@ -236,7 +236,7 @@ export default function StagePage() {
             Back
           </button>
           <h1 className="text-lg font-bold uppercase tracking-tight text-[#344e5d]">
-            SKYSH CHRAM
+            Chartine
           </h1>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[#cbe6f9]/60 bg-[#cbe6f9]/20 px-3 py-1.5 text-[#344e5d]">
