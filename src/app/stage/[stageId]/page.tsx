@@ -105,32 +105,32 @@ export default function StagePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stageId: stageSession.stage.id }),
       });
-      if (response.ok) {
-        const data = await response.json();
-        const completionData = data.data as StageCompleteResponse;
-        const storedNextStageId = markStageCompleted(
-          staticLearningMap,
-          stageSession.stage.id,
-        );
-        const resolvedNextStageId =
-          completionData?.nextStageId ?? storedNextStageId;
-        setCompletion(completionData);
-        if (resolvedNextStageId) {
-          setAdvancing(true);
-          window.setTimeout(() => {
-            router.push(`/stage/${resolvedNextStageId}`);
-          }, 900);
-          return;
-        }
 
-        setNextStageId(null);
-        setStageCompleted(true);
-      } else {
-        router.push("/dashboard");
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error?.message ?? "Failed to save stage progress.",
+        );
       }
+
+      const completionData = data.data as StageCompleteResponse;
+      const storedNextStageId = markStageCompleted(
+        staticLearningMap,
+        stageSession.stage.id,
+      );
+      setCompletion(completionData);
+      setNextStageId(completionData?.nextStageId ?? storedNextStageId);
+      setAdvancing(true);
+      window.setTimeout(() => {
+        router.push("/dashboard");
+      }, 900);
     } catch (err) {
       console.error("Error completing stage:", err);
-      router.push("/dashboard");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to save stage progress. Please try again.",
+      );
     }
   }
 
@@ -152,6 +152,9 @@ export default function StagePage() {
               This stage was already completed, so no extra points were awarded.
             </p>
           )}
+          <p className="mt-3 text-sm font-semibold text-[#434653]">
+            Returning to dashboard...
+          </p>
           <div className="mx-auto mt-6 h-8 w-8 animate-spin rounded-full border-4 border-[#c4c6d5] border-t-[#344e5d]" />
         </div>
       </div>
