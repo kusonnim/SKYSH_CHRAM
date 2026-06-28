@@ -16,9 +16,10 @@ import type { Candle } from "@/types";
 type CandleChartProps = {
   candles: Candle[];
   selectedIndex: number | null;
-  onSelectCandle: (index: number) => void;
+  onSelectCandle?: (index: number) => void;
   correctIndex?: number | null;
   isWrong?: boolean;
+  selectable?: boolean;
 };
 
 function toChartTime(time: string): Time {
@@ -31,6 +32,7 @@ export function CandleChart({
   onSelectCandle,
   correctIndex,
   isWrong,
+  selectable = true,
 }: CandleChartProps) {
   const chartContainer = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -40,7 +42,7 @@ export function CandleChart({
   const timeToIndexRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
-    handlerRef.current = onSelectCandle;
+    handlerRef.current = onSelectCandle ?? (() => {});
   }, [onSelectCandle]);
 
   useEffect(() => {
@@ -127,6 +129,7 @@ export function CandleChart({
 
     chart.subscribeClick((param) => {
       const rawTime = param.time as Time | string | undefined;
+      if (!selectable) return;
       if (!rawTime) return;
       const index = timeToIndexRef.current[String(rawTime)];
       if (index !== undefined) {
@@ -141,7 +144,7 @@ export function CandleChart({
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
     };
-  }, []);
+  }, [selectable]);
 
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
@@ -205,12 +208,14 @@ export function CandleChart({
     <section className="rounded-xl border border-[#c4c6d5]/50 bg-[#f3f3fd] p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1a1b22]">BTC Daily Chart</h3>
-        <div className="text-[10px] font-medium uppercase text-[#434653]">
-          Selected:{" "}
-          <span className="font-bold text-[#344e5d]">
-            {selectedIndex === null ? "none" : `Candle #${selectedIndex + 1}`}
-          </span>
-        </div>
+        {selectable && (
+          <div className="text-[10px] font-medium uppercase text-[#434653]">
+            Selected:{" "}
+            <span className="font-bold text-[#344e5d]">
+              {selectedIndex === null ? "none" : `Candle #${selectedIndex + 1}`}
+            </span>
+          </div>
+        )}
       </div>
       <div className="overflow-hidden rounded-lg border border-[#c4c6d5]/30 bg-white">
         <div ref={chartContainer} className="h-[360px] w-full" />

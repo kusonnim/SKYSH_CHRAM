@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { PortfolioSummary, TradeSide } from "@/types";
+import { CandleChart } from "@/components/chart";
+import type { Candle, PortfolioSummary, TradeSide } from "@/types";
 
 function formatPoints(value: number) {
   return `${Math.round(value).toLocaleString()} P`;
@@ -18,6 +19,7 @@ function formatBtc(value: number) {
 
 export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
+  const [candles, setCandles] = useState<Candle[]>([]);
   const [pointsAmount, setPointsAmount] = useState("100");
   const [side, setSide] = useState<TradeSide>("buy");
   const [loading, setLoading] = useState(true);
@@ -33,15 +35,36 @@ export default function PortfolioPage() {
     return amount / portfolio.ticker.tradePrice;
   }, [pointsAmount, portfolio]);
 
+  const maxSellPoints = useMemo(() => {
+    if (!portfolio) {
+      return 0;
+    }
+
+    return Math.floor(portfolio.valuation.positionValue);
+  }, [portfolio]);
+
   async function loadPortfolio() {
     setError(null);
     try {
-      const response = await fetch("/api/portfolio");
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error?.message ?? "Unable to load portfolio.");
+      const [portfolioResponse, candlesResponse] = await Promise.all([
+        fetch("/api/portfolio"),
+        fetch("/api/market/btc-candles"),
+      ]);
+      const [portfolioData, candlesData] = await Promise.all([
+        portfolioResponse.json(),
+        candlesResponse.json(),
+      ]);
+
+      if (!portfolioData.success) {
+        throw new Error(
+          portfolioData.error?.message ?? "Unable to load portfolio.",
+        );
       }
-      setPortfolio(data.data);
+
+      setPortfolio(portfolioData.data);
+      if (candlesData.success) {
+        setCandles(candlesData.data.candles);
+      }
     } catch (err: any) {
       setError(err.message ?? "Unable to load portfolio.");
     } finally {
@@ -73,7 +96,9 @@ export default function PortfolioPage() {
       }
       setPortfolio(data.data.portfolio);
       setMessage(
-        `${side === "buy" ? "Bought" : "Sold"} ${formatBtc(
+        `${side === "buy" ? "Bought with" : "Sold for"} ${formatPoints(
+          data.data.pointsAmount,
+        )}: ${formatBtc(
           data.data.quantity,
         )} at ${formatKrw(data.data.price)}.`,
       );
@@ -206,7 +231,7 @@ export default function PortfolioPage() {
             </div>
 
             <label className="mt-5 block text-sm font-semibold text-[#434653]">
-              Points Amount
+              {side === "buy" ? "Points to spend" : "Points to receive"}
             </label>
             <input
               className="mt-2 w-full rounded-lg border border-[#c4c6d5] bg-[#f3f3fd] px-4 py-3 text-[#1a1b22]"
@@ -215,20 +240,57 @@ export default function PortfolioPage() {
               type="number"
               value={pointsAmount}
             />
-            <p className="mt-3 text-xs font-medium text-[#747685]">
-              Estimated BTC: {formatBtc(tradePreview)}
-            </p>
+            <div className="mt-3 space-y-1 text-xs font-medium text-[#747685]">
+              <p>
+                {side === "buy" ? "Estimated BTC" : "BTC to sell"}:{" "}
+                <span className="font-bold text-[#344e5d]">
+                  {formatBtc(tradePreview)}
+                </span>
+              </p>
+              {side === "sell" && (
+                <p>
+                  Max sellable now:{" "}
+                  <button
+                    className="font-bold text-[#344e5d] underline underline-offset-2"
+                    onClick={() => setPointsAmount(String(maxSellPoints))}
+                    type="button"
+                  >
+                    {formatPoints(maxSellPoints)}
+                  </button>
+                </p>
+              )}
+            </div>
 
             <button
               className="mt-6 w-full rounded-xl bg-[#344e5d] py-4 font-bold uppercase text-white shadow-md transition-colors hover:bg-[#4c6676] disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={submitting}
+              disabled={
+                submitting ||
+                (side === "sell" &&
+                  (maxSellPoints <= 0 || Number(pointsAmount) > maxSellPoints))
+              }
               onClick={handleTrade}
               type="button"
             >
-              {submitting ? "Submitting..." : `${side} BTC`}
+              {submitting
+                ? "Submitting..."
+                : side === "buy"
+                  ? "Buy BTC with points"
+                  : "Sell BTC for points"}
             </button>
           </div>
         </section>
+
+        {candles.length > 0 ? (
+          <CandleChart
+            candles={candles}
+            selectable={false}
+            selectedIndex={null}
+          />
+        ) : (
+          <section className="flex h-[420px] items-center justify-center rounded-xl border border-[#c4c6d5]/30 bg-white text-sm font-semibold text-[#747685] shadow-sm">
+            BTC chart unavailable.
+          </section>
+        )}
       </main>
 
       <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-[#c4c6d5]/40 bg-[#faf8ff]/85 px-4 shadow-lg backdrop-blur-md">
