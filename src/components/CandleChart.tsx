@@ -73,13 +73,13 @@ export function CandleChart({
           new Intl.NumberFormat("en-US").format(price),
       },
       handleScroll: {
-        mouseWheel: false,
-        pressedMouseMove: true,
+        mouseWheel: !selectable,
+        pressedMouseMove: !selectable,
       },
       handleScale: {
-        axisPressedMouseMove: true,
-        mouseWheel: true,
-        pinch: true,
+        axisPressedMouseMove: !selectable,
+        mouseWheel: !selectable,
+        pinch: !selectable,
       },
       grid: {
         vertLines: { color: "#e4e1ed" },
