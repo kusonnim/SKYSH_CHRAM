@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "latest",
+    "@upbit-official/upbit-sdk": "^0.9.0",
     "lightweight-charts": "latest",
     "next": "latest",
     "react": "latest",
