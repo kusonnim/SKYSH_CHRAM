@@ -59,14 +59,21 @@ export default function DashboardPage() {
       </main>
       <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-[#c4c6d5]/40 bg-[#faf8ff]/85 px-6 shadow-lg backdrop-blur-md">
         <a
-          className="flex flex-col items-center justify-center rounded-lg bg-[#344e5d]/10 px-6 py-2 text-[#344e5d] active:scale-95"
+          className="flex flex-col items-center justify-center rounded-lg bg-[#344e5d]/10 px-4 py-2 text-[#344e5d] active:scale-95"
           href="/dashboard"
         >
           <span className="text-lg font-bold">L</span>
           <span className="text-xs font-bold uppercase tracking-wide">Learn</span>
         </a>
         <a
-          className="flex flex-col items-center justify-center px-6 py-2 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-95"
+          className="flex flex-col items-center justify-center px-4 py-2 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-95"
+          href="/portfolio"
+        >
+          <span className="text-lg font-bold">B</span>
+          <span className="text-xs font-bold uppercase tracking-wide">Invest</span>
+        </a>
+        <a
+          className="flex flex-col items-center justify-center px-4 py-2 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-95"
           href="/profile"
         >
           <span className="text-lg font-bold">P</span>

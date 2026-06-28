@@ -135,14 +135,21 @@ export default function ProfilePage() {
 
       <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around border-t border-[#c4c6d5]/40 bg-[#faf8ff]/80 px-4 shadow-lg backdrop-blur-md">
         <a
-          className="flex flex-col items-center justify-center px-6 py-1 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-90"
+          className="flex flex-col items-center justify-center px-4 py-1 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-90"
           href="/dashboard"
         >
           <span className="text-lg font-bold">L</span>
           <span className="mt-1 text-[10px] font-bold uppercase">Learn</span>
         </a>
         <a
-          className="flex flex-col items-center justify-center rounded-xl bg-[#4c6676] px-8 py-1 text-[#c8e3f6] active:scale-90"
+          className="flex flex-col items-center justify-center px-4 py-1 text-[#434653] transition-colors hover:text-[#344e5d] active:scale-90"
+          href="/portfolio"
+        >
+          <span className="text-lg font-bold">B</span>
+          <span className="mt-1 text-[10px] font-bold uppercase">Invest</span>
+        </a>
+        <a
+          className="flex flex-col items-center justify-center rounded-xl bg-[#4c6676] px-6 py-1 text-[#c8e3f6] active:scale-90"
           href="/profile"
         >
           <span className="text-lg font-bold">P</span>
