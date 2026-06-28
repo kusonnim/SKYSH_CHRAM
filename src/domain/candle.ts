@@ -43,6 +43,6 @@ export function normalizeUpbitCandles(rawCandles: unknown[]): Candle[] {
     }));
 }
 
-export function sortCandlesOldestFirst(_candles: Candle[]): Candle[] {
-  throw new Error("TODO: implement sortCandlesOldestFirst in the domain layer.");
+export function sortCandlesOldestFirst(candles: Candle[]): Candle[] {
+  return [...candles].sort((a, b) => a.time.localeCompare(b.time));
 }
