@@ -6,13 +6,10 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const STAGE_COMPLETE_POINTS = 100;
 
-type CompleteStageResult = {
-  already_completed: boolean;
-  points_awarded: number;
-  stage_id: string;
-  status: string;
-  total_points: number;
-};
+function toNumber(value: unknown): number {
+  const numberValue = Number(value ?? 0);
+  return Number.isFinite(numberValue) ? numberValue : 0;
+}
 
 export async function POST(request: Request) {
   try {
@@ -50,27 +47,104 @@ export async function POST(request: Request) {
       );
     }
 
-    const nextStageId = getNextStageId(staticLearningMap, body.stageId);
-    const { data, error } = await supabase
-      .rpc("complete_stage", {
-        p_stage_id: body.stageId,
-        p_points_award: STAGE_COMPLETE_POINTS,
-      })
-      .single();
-    const completion = data as CompleteStageResult | null;
+    const { error: completionError } = await supabase
+      .from("stage_completions")
+      .insert({
+        user_id: user.id,
+        stage_id: body.stageId,
+        points_awarded: STAGE_COMPLETE_POINTS,
+      });
 
-    if (error) {
+    const alreadyCompleted = completionError?.code === "23505";
+    if (completionError && !alreadyCompleted) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "STAGE_COMPLETE_FAILED",
-            message: error.message,
+            message: completionError.message,
           },
         },
         { status: 500 },
       );
     }
+
+    const pointsAwarded = alreadyCompleted ? 0 : STAGE_COMPLETE_POINTS;
+    const { data: profile, error: profileReadError } = await supabase
+      .from("profiles")
+      .select("points")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileReadError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "PROFILE_READ_FAILED",
+            message: profileReadError.message,
+          },
+        },
+        { status: 500 },
+      );
+    }
+
+    let totalPoints = toNumber(profile?.points);
+    if (profile) {
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          points: totalPoints + pointsAwarded,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+        .select("points")
+        .single();
+
+      if (updateError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "PROFILE_UPDATE_FAILED",
+              message: updateError.message,
+            },
+          },
+          { status: 500 },
+        );
+      }
+
+      totalPoints = toNumber(updatedProfile?.points);
+    } else {
+      const { data: newProfile, error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          nickname:
+            user.user_metadata?.nickname || user.email?.split("@")[0] || "User",
+          avatar_url: "/avatars/default.png",
+          points: pointsAwarded,
+        })
+        .select("points")
+        .single();
+
+      if (insertError) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "PROFILE_CREATE_FAILED",
+              message: insertError.message,
+            },
+          },
+          { status: 500 },
+        );
+      }
+
+      totalPoints = toNumber(newProfile?.points);
+    }
+
+    const nextStageId = getNextStageId(staticLearningMap, body.stageId);
 
     return NextResponse.json({
       success: true,
@@ -78,9 +152,9 @@ export async function POST(request: Request) {
         stageId: body.stageId,
         status: "completed",
         nextStageId,
-        pointsAwarded: completion?.points_awarded ?? 0,
-        alreadyCompleted: completion?.already_completed ?? false,
-        totalPoints: completion?.total_points ?? 0,
+        pointsAwarded,
+        alreadyCompleted,
+        totalPoints,
       },
     });
   } catch (error: any) {
