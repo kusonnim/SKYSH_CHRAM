@@ -48,7 +48,7 @@ export type AnswerResult = {
 };
 
 export type PortfolioSummary = {
-  market: "KRW-BTC";
+  market: string;
   points: number;
   position: {
     quantity: number;
@@ -70,12 +70,13 @@ export type PortfolioSummary = {
 export type TradeSide = "buy" | "sell";
 
 export type SubmitTradeRequest = {
+  market: string;
   side: TradeSide;
   pointsAmount: number;
 };
 
 export type TradeResult = {
-  market: "KRW-BTC";
+  market: string;
   side: TradeSide;
   price: number;
   quantity: number;

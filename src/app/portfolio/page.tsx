@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CandleChart } from "@/components/chart";
+import { DEFAULT_MARKET, findSupportedMarket, supportedMarkets } from "@/domain/markets";
 import type { Candle, PortfolioSummary, TradeSide } from "@/types";
 
 function formatPoints(value: number) {
@@ -13,11 +14,12 @@ function formatKrw(value: number) {
   return `${Math.round(value).toLocaleString()} KRW`;
 }
 
-function formatBtc(value: number) {
-  return `${value.toFixed(8)} BTC`;
+function formatCoin(value: number, symbol: string) {
+  return `${value.toFixed(8)} ${symbol}`;
 }
 
 export default function PortfolioPage() {
+  const [selectedMarket, setSelectedMarket] = useState(DEFAULT_MARKET);
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [candles, setCandles] = useState<Candle[]>([]);
   const [pointsAmount, setPointsAmount] = useState("100");
@@ -26,6 +28,7 @@ export default function PortfolioPage() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const marketInfo = findSupportedMarket(selectedMarket);
 
   const tradePreview = useMemo(() => {
     const amount = Number(pointsAmount);
@@ -46,9 +49,10 @@ export default function PortfolioPage() {
   async function loadPortfolio() {
     setError(null);
     try {
+      const query = new URLSearchParams({ market: selectedMarket });
       const [portfolioResponse, candlesResponse] = await Promise.all([
-        fetch("/api/portfolio"),
-        fetch("/api/market/btc-candles"),
+        fetch(`/api/portfolio?${query.toString()}`),
+        fetch(`/api/market/btc-candles?${query.toString()}`),
       ]);
       const [portfolioData, candlesData] = await Promise.all([
         portfolioResponse.json(),
@@ -73,8 +77,11 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => {
+    setLoading(true);
+    setCandles([]);
+    setMessage(null);
     loadPortfolio();
-  }, []);
+  }, [selectedMarket]);
 
   async function handleTrade() {
     setSubmitting(true);
@@ -86,6 +93,7 @@ export default function PortfolioPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          market: selectedMarket,
           side,
           pointsAmount: Number(pointsAmount),
         }),
@@ -98,8 +106,9 @@ export default function PortfolioPage() {
       setMessage(
         `${side === "buy" ? "Bought with" : "Sold for"} ${formatPoints(
           data.data.pointsAmount,
-        )}: ${formatBtc(
+        )}: ${formatCoin(
           data.data.quantity,
+          marketInfo.symbol,
         )} at ${formatKrw(data.data.price)}.`,
       );
     } catch (err: any) {
@@ -151,14 +160,34 @@ export default function PortfolioPage() {
           </div>
         )}
 
+        <section className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {supportedMarkets.map((market) => (
+            <button
+              className={`rounded-xl border px-3 py-3 text-left transition-colors ${
+                selectedMarket === market.market
+                  ? "border-[#344e5d] bg-[#344e5d] text-white shadow-sm"
+                  : "border-[#c4c6d5]/30 bg-white text-[#434653] hover:border-[#344e5d]/40"
+              }`}
+              key={market.market}
+              onClick={() => setSelectedMarket(market.market)}
+              type="button"
+            >
+              <span className="block text-sm font-bold">{market.symbol}</span>
+              <span className="mt-1 block text-[10px] font-semibold uppercase opacity-75">
+                {market.label}
+              </span>
+            </button>
+          ))}
+        </section>
+
         <section className="grid gap-4 md:grid-cols-3">
           <SummaryCard
             label="Available Points"
             value={formatPoints(portfolio?.points ?? 0)}
           />
           <SummaryCard
-            label="BTC Position"
-            value={formatBtc(portfolio?.position.quantity ?? 0)}
+            label={`${marketInfo.symbol} Position`}
+            value={formatCoin(portfolio?.position.quantity ?? 0, marketInfo.symbol)}
           />
           <SummaryCard
             label="Total Asset Value"
@@ -171,7 +200,7 @@ export default function PortfolioPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-[#747685]">
-                  KRW-BTC
+                  {marketInfo.market}
                 </p>
                 <h2 className="mt-1 text-3xl font-bold text-[#1a1b22]">
                   {formatKrw(portfolio?.ticker.tradePrice ?? 0)}
@@ -212,7 +241,9 @@ export default function PortfolioPage() {
           </div>
 
           <div className="rounded-xl border border-[#c4c6d5]/30 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-[#1a1b22]">Trade BTC</h2>
+            <h2 className="text-lg font-bold text-[#1a1b22]">
+              Trade {marketInfo.symbol}
+            </h2>
             <div className="mt-5 flex rounded-lg bg-[#e2e2eb]/60 p-1">
               {(["buy", "sell"] as TradeSide[]).map((option) => (
                 <button
@@ -242,9 +273,12 @@ export default function PortfolioPage() {
             />
             <div className="mt-3 space-y-1 text-xs font-medium text-[#747685]">
               <p>
-                {side === "buy" ? "Estimated BTC" : "BTC to sell"}:{" "}
+                {side === "buy"
+                  ? `Estimated ${marketInfo.symbol}`
+                  : `${marketInfo.symbol} to sell`}
+                :{" "}
                 <span className="font-bold text-[#344e5d]">
-                  {formatBtc(tradePreview)}
+                  {formatCoin(tradePreview, marketInfo.symbol)}
                 </span>
               </p>
               {side === "sell" && (
@@ -272,10 +306,10 @@ export default function PortfolioPage() {
               type="button"
             >
               {submitting
-                ? "Submitting..."
-                : side === "buy"
-                  ? "Buy BTC with points"
-                  : "Sell BTC for points"}
+                  ? "Submitting..."
+                  : side === "buy"
+                  ? `Buy ${marketInfo.symbol} with points`
+                  : `Sell ${marketInfo.symbol} for points`}
             </button>
           </div>
         </section>
@@ -285,11 +319,11 @@ export default function PortfolioPage() {
             candles={candles}
             selectable={false}
             selectedIndex={null}
-            title="BTC Daily Chart"
+            title={`${marketInfo.symbol} Daily Chart`}
           />
         ) : (
           <section className="flex h-[420px] items-center justify-center rounded-xl border border-[#c4c6d5]/30 bg-white text-sm font-semibold text-[#747685] shadow-sm">
-            BTC chart unavailable.
+            {marketInfo.symbol} chart unavailable.
           </section>
         )}
       </main>
