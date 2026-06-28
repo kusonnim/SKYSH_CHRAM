@@ -101,9 +101,9 @@ export default function ProfilePage() {
         totalStages > 0 ? Math.round((completedCount / totalStages) * 100) : 0,
       );
 
-      const mods = staticLearningMap.chapters.map((chapter, i) => {
+      const mods = learningMap.chapters.map((chapter, i) => {
         const total = chapter.stages.length;
-        const completed = chapter.stages.filter(stage => progress.completedStageIds.includes(stage.id)).length;
+        const completed = chapter.stages.filter(stage => stage.status === 'completed').length;
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
         return {
           label: `Module ${i + 1}`,
