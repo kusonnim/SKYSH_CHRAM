@@ -5,14 +5,9 @@ export type GradeSelectCandleAnswerResult = {
 };
 
 export function gradeSelectCandleAnswer(
-  selectedIndex: number,
-  correctIndex: number,
+  _selectedIndex: number,
+  _correctIndex: number,
 ): GradeSelectCandleAnswerResult {
-  const isCorrect = selectedIndex === correctIndex;
-  return {
-    isCorrect,
-    score: isCorrect ? 100 : 0,
-    mistakeCode: isCorrect ? null : "WRONG_CANDLE",
-  };
+  throw new Error("TODO: implement gradeSelectCandleAnswer in the domain layer.");
 }
 
