@@ -1,339 +1,403 @@
-# TASKS.md
-
 # Development Tasks
 
-This document defines how the project is divided among team members.
+This document explains how three developers should divide work, avoid merge conflicts, and implement the next milestone.
 
-The goal is to allow every developer to work simultaneously with minimal merge conflicts.
-
----
-
-# Development Strategy
-
-The project is divided into three independent areas.
+The next milestone is:
 
 ```text
-Frontend
-
-Backend
-
-Domain
+Login first, then learning map, then stage sessions.
 ```
 
-Each team owns its own area.
+The product direction is a Duolingo-style chart learning app:
 
-No team should implement another team's responsibilities.
+```text
+Chapter
+  Stage
+    Question[]
+```
 
 ---
 
-# Frontend Team
+# Team Structure
+
+The project is divided among three developers.
+
+```text
+Developer A: Auth / App Shell
+Developer B: Curriculum / Domain
+Developer C: Learning UI / Chart
+```
+
+Each developer owns a clear area.
+
+Do not modify another developer's owned files without agreement.
+
+---
+
+# Developer A: Auth / App Shell
 
 ## Goal
 
-Build the complete user interface.
+Implement Supabase authentication and protect the main app shell.
 
-The frontend should work even before the backend is finished by using mock data.
-
----
+Developer A owns the login-first milestone.
 
 ## Responsibilities
 
-* Landing page
 * Login page
 * Signup page
-* Dashboard
-* Chart rendering
-* Question panel
-* Feedback panel
-* User interactions
+* Logout
+* Supabase client setup
+* Supabase server and middleware setup
+* Dashboard route protection
+* Auth redirects
+* Authenticated app shell
 
----
-
-## Editable Folders
+## Editable Files and Folders
 
 ```text
-src/app/
-
-src/components/
+src/app/login/
+src/app/signup/
+src/app/dashboard/
+src/components/auth/
+src/lib/supabase/
+src/middleware.ts
+.env.example
 ```
-
----
 
 ## Read Only
 
 ```text
 src/domain/
-
-src/server/
-
+src/content/
+src/components/learning/
+src/components/chart/
 src/app/api/
-
 src/types/
 ```
 
----
+## Requirements
 
-## API Dependency
-
-Frontend only communicates through HTTP requests.
-
-Allowed endpoints:
-
-```text
-GET /api/questions/today
-
-POST /api/answers
-```
-
-The frontend must never call Upbit directly.
+* User can sign up.
+* User can log in.
+* User can log out.
+* Unauthenticated users are redirected from `/dashboard` to `/login`.
+* Authenticated users are redirected from `/login` and `/signup` to `/dashboard`.
+* Auth logic remains isolated from learning and chart logic.
 
 ---
 
-## Temporary Development
-
-Until the backend is complete, use mock data.
-
-Example:
-
-```ts
-const mockQuestion = ...
-```
-
-The UI should later work without modification by replacing the mock with an API request.
-
----
-
-# Backend Team
+# Developer B: Curriculum / Domain
 
 ## Goal
 
-Implement every HTTP endpoint.
-
-The backend should be testable using Postman or Thunder Client without any frontend.
-
----
+Define the learning model and keep business rules pure.
 
 ## Responsibilities
 
-* Upbit communication
-* API routes
-* Question endpoint
-* Answer endpoint
-* Response generation
+* `Chapter`, `Stage`, and `LearningMap` types
+* Static curriculum data
+* Stage status rules
+* Question generation rules
+* Answer grading
+* Feedback generation
+* Domain tests
+* API contract documentation
 
----
-
-## Editable Folders
+## Editable Files and Folders
 
 ```text
-src/app/api/
-
-src/server/
+src/types/
+src/domain/
+src/content/
+API.md
+ARCHITECTURE.md
+TASKS.md
+MVP.md
 ```
-
----
 
 ## Read Only
 
 ```text
 src/components/
-
 src/app/
+src/server/
+src/lib/supabase/
+```
 
+## Requirements
+
+* Define `Chapter`.
+* Define `Stage`.
+* Define `StageStatus`.
+* Define `LearningMap`.
+* Keep the existing single-question flow working while the learning map is added.
+* Add tests for curriculum and progress helpers.
+* Domain code must not import React, Next.js, Supabase, HTTP, or browser APIs.
+
+---
+
+# Developer C: Learning UI / Chart
+
+## Goal
+
+Build the learning experience UI without owning authentication or domain rules.
+
+## Responsibilities
+
+* Learning map UI
+* Chapter section UI
+* Stage node UI
+* Stage session page
+* Candle chart interaction
+* Question panel UI
+* Feedback UI
+* Visual states for locked, available, and completed stages
+
+## Editable Files and Folders
+
+```text
+src/components/learning/
+src/components/chart/
+src/app/stage/
+```
+
+Developer C may edit `src/app/dashboard/page.tsx` only after coordinating with Developer A.
+
+## Read Only
+
+```text
 src/domain/
-
 src/types/
+src/content/
+src/lib/supabase/
+src/app/api/
+```
+
+## Requirements
+
+* Dashboard can display chapters and stages.
+* Stage nodes show locked, available, and completed states.
+* Available stages can be opened.
+* Stage page can display placeholder questions before API integration is complete.
+* UI must not calculate correct answers or generate questions.
+
+---
+
+# Backend / API Ownership
+
+Backend work should be assigned explicitly before editing API files.
+
+For the 3-person plan:
+
+* Developer B owns API contracts and domain behavior.
+* Developer A owns auth-related server utilities.
+* Developer C consumes APIs from the UI.
+* One developer should be selected before changing `src/app/api/` or `src/server/`.
+
+## Backend Responsibilities
+
+* Upbit communication
+* Learning map endpoint
+* Stage endpoint
+* Answer endpoint
+* Progress endpoint
+* Response generation
+* Error handling
+
+## Backend Editable Folders
+
+```text
+src/app/api/
+src/server/
 ```
 
 ---
 
-## Responsibilities
+# Recommended Folder Ownership
+
+```text
+src/types/               Developer B
+src/domain/              Developer B
+src/content/             Developer B
+
+src/lib/supabase/        Developer A
+src/middleware.ts        Developer A
+src/app/login/           Developer A
+src/app/signup/          Developer A
+src/app/dashboard/       Developer A owns the shell
+src/components/auth/     Developer A
+
+src/components/learning/ Developer C
+src/components/chart/    Developer C
+src/app/stage/           Developer C
+
+src/app/api/             Assigned per task
+src/server/              Assigned per task
+```
+
+---
+
+# Branch Strategy
+
+Use separate branches for each workstream.
+
+```text
+feature/auth-supabase
+feature/curriculum-contracts
+feature/learning-map-ui
+feature/stage-session-ui
+feature/learning-api
+```
+
+Recommended merge order:
+
+1. `feature/curriculum-contracts`
+2. `feature/auth-supabase`
+3. `feature/learning-map-ui`
+4. `feature/stage-session-ui`
+5. `feature/learning-api`
+
+If login is the immediate milestone, `feature/auth-supabase` may merge first.
+
+In that case, Developer B must avoid breaking existing `Question` and API types.
+
+---
+
+# Login-First Task Breakdown
+
+## Developer A
 
 Implement:
 
 ```text
-GET /api/questions/today
-
-POST /api/answers
+src/lib/supabase/client.ts
+src/lib/supabase/server.ts
+src/lib/supabase/middleware.ts
+src/middleware.ts
+src/components/auth/AuthForm.tsx
+src/components/auth/LogoutButton.tsx
 ```
 
-The backend should use functions from the Domain layer instead of implementing business logic directly.
+## Developer B
 
----
-
-# Domain Team
-
-## Goal
-
-Implement every business rule.
-
-The Domain layer contains the educational logic of the application.
-
----
-
-## Responsibilities
-
-* Candle normalization
-* Candle sorting
-* Question generation
-* Answer grading
-* Feedback template generation
-
----
-
-## Editable Folders
+Implement or prepare:
 
 ```text
-src/domain/
-
-src/types/
+src/types/curriculum.ts
+src/types/learning.ts
+src/domain/curriculum.ts
+src/domain/progress.ts
+src/content/curriculum.ts
 ```
 
----
+## Developer C
 
-## Read Only
+Implement:
 
 ```text
-src/components/
-
-src/app/
-
-src/server/
+src/components/learning/LearningMap.tsx
+src/components/learning/ChapterSection.tsx
+src/components/learning/StageNode.tsx
+src/app/stage/[stageId]/page.tsx
 ```
-
----
-
-## Rules
-
-Every function must be:
-
-* Pure
-* Deterministic
-* Independently testable
-
-The Domain layer must not import:
-
-* React
-* Next.js
-* Supabase
-* Browser APIs
 
 ---
 
 # Integration Rules
 
-The following dependency direction must be respected.
+The dependency direction is fixed.
 
 ```text
 Frontend
-
-↓
-
+  -
 Backend
-
-↓
-
+  -
 Domain
 ```
 
 Reverse dependencies are forbidden.
 
+Examples:
+
+* Domain cannot import React.
+* Domain cannot import Next.js.
+* Domain cannot import Supabase.
+* Components cannot calculate the correct answer.
+* Components cannot generate questions.
+* Frontend must never call Upbit directly.
+
 ---
 
 # Shared Contracts
 
-All teams share the following files.
+All developers share the following files.
 
 ```text
 src/types/
-
 API.md
 ```
 
-These files define the project contracts.
+These files define project contracts.
 
-Changing them requires agreement from every team.
-
----
-
-# Merge Rules
-
-Each team should avoid modifying another team's files.
-
-Preferred ownership:
-
-```text
-Frontend
-
-↓
-
-app/
-
-components/
-```
-
-```text
-Backend
-
-↓
-
-app/api/
-
-server/
-```
-
-```text
-Domain
-
-↓
-
-domain/
-
-types/
-```
+Changing them requires agreement from every developer.
 
 ---
 
-# Daily Integration
-
-Recommended workflow:
+# Daily Workflow
 
 1. Pull latest changes.
 2. Implement only inside owned folders.
-3. Test locally.
-4. Open Pull Request.
-5. Resolve conflicts immediately.
+3. Run tests locally.
+4. Run the build locally when touching app code.
+5. Open a pull request.
+6. Resolve conflicts immediately.
+
+Recommended checks:
+
+```text
+npm test
+npm run build
+```
 
 ---
 
 # MVP Checklist
 
-## Frontend
+## Auth / App Shell
 
-* Landing page
 * Login page
-* Dashboard
+* Signup page
+* Logout
+* Protected dashboard
+* Auth redirects
+
+## Curriculum / Domain
+
+* Chapter type
+* Stage type
+* Learning map type
+* Static curriculum
+* Stage status rules
+* Existing candle question rules
+
+## Learning UI
+
+* Learning map
+* Chapter sections
+* Stage nodes
+* Stage page
 * Candle chart
 * Question UI
 * Feedback UI
 
----
-
 ## Backend
 
 * Upbit connection
-* Question API
+* Learning map API
+* Stage API
 * Answer API
-
----
-
-## Domain
-
-* Normalize candles
-* Find highest-volume candle
-* Generate question
-* Grade answer
-* Generate feedback
+* Progress API, when needed
 
 ---
 
@@ -343,29 +407,21 @@ The MVP is complete when the following flow works.
 
 ```text
 User logs in
-
-↓
-
+  -
 Dashboard opens
-
-↓
-
-Today's question is loaded
-
-↓
-
+  -
+Learning map is displayed
+  -
+User opens a stage
+  -
+Stage questions are loaded
+  -
 BTC chart is displayed
-
-↓
-
+  -
 User selects a candle
-
-↓
-
+  -
 Answer is submitted
-
-↓
-
+  -
 Feedback is displayed
 ```
 
@@ -375,14 +431,14 @@ Feedback is displayed
 
 The following features are intentionally postponed.
 
-* Database
+* Large curriculum
+* Database-backed curriculum management
 * Virtual trading
 * AI feedback
 * Drawing tools
-* Multiple lessons
-* Progress tracking
-* Review system
+* XP
+* Achievements
+* Streaks
 * Real trading
 * Technical indicators
 
-These features will be added after the MVP is stable.

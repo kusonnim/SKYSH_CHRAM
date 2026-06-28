@@ -25,6 +25,7 @@ export type Candle = {
 export type Question = {
   id: string;
   type: "select_candle";
+  stageId?: string;
   market: string;
   timeframe: string;
   prompt: string;
@@ -45,4 +46,3 @@ export type AnswerResult = {
   score: number;
   feedback: string;
 };
-
