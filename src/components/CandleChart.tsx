@@ -41,6 +41,7 @@ export function CandleChart({
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const handlerRef = useRef<(index: number) => void>(() => {});
+  const isPointerSelectingRef = useRef(false);
   const timeToIndexRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
@@ -129,17 +130,45 @@ export function CandleChart({
 
     resizeObserver.observe(container);
 
-    chart.subscribeClick((param) => {
-      const rawTime = param.time as Time | string | undefined;
+    const selectTime = (rawTime: Time | string | undefined) => {
       if (!selectable) return;
       if (!rawTime) return;
       const index = timeToIndexRef.current[String(rawTime)];
       if (index !== undefined) {
         handlerRef.current(index);
       }
+    };
+
+    chart.subscribeClick((param) => {
+      selectTime(param.time as Time | string | undefined);
     });
 
+    chart.subscribeCrosshairMove((param) => {
+      if (!isPointerSelectingRef.current) return;
+      selectTime(param.time as Time | string | undefined);
+    });
+
+    const startSelecting = () => {
+      if (!selectable) return;
+      isPointerSelectingRef.current = true;
+    };
+    const stopSelecting = () => {
+      isPointerSelectingRef.current = false;
+    };
+
+    container.addEventListener("pointerdown", startSelecting);
+    window.addEventListener("pointerup", stopSelecting);
+    window.addEventListener("pointercancel", stopSelecting);
+
+    if (selectable) {
+      container.style.touchAction = "none";
+    }
+
     return () => {
+      container.removeEventListener("pointerdown", startSelecting);
+      window.removeEventListener("pointerup", stopSelecting);
+      window.removeEventListener("pointercancel", stopSelecting);
+      container.style.touchAction = "";
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
@@ -183,6 +212,20 @@ export function CandleChart({
     if (!candleSeries) return;
 
     const markers: SeriesMarker<Time>[] = [];
+    if (
+      selectable &&
+      selectedIndex !== null &&
+      !isWrong &&
+      candles[selectedIndex]
+    ) {
+      markers.push({
+        time: toChartTime(candles[selectedIndex].time),
+        position: "aboveBar",
+        color: "#4648d4",
+        shape: "circle",
+        text: `Selected #${selectedIndex + 1}`,
+      });
+    }
     if (isWrong && selectedIndex !== null && candles[selectedIndex]) {
       markers.push({
         time: toChartTime(candles[selectedIndex].time),
@@ -211,9 +254,9 @@ export function CandleChart({
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-[#1a1b22]">{title}</h3>
         {selectable && (
-          <div className="text-[10px] font-medium uppercase text-[#434653]">
-            Selected:{" "}
-            <span className="font-bold text-[#344e5d]">
+          <div className="rounded-full bg-[#4648d4]/10 px-3 py-1 text-[10px] font-bold uppercase text-[#434653]">
+            Pick:{" "}
+            <span className="text-[#4648d4]">
               {selectedIndex === null ? "none" : `Candle #${selectedIndex + 1}`}
             </span>
           </div>
