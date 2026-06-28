@@ -52,7 +52,7 @@ describe("normalizeUpbitCandles", () => {
       ]),
     ).toEqual([
       {
-        time: "2026-06-01T09:00:00",
+        time: "2026-06-01",
         open: 100,
         high: 120,
         low: 90,
@@ -68,7 +68,7 @@ describe("normalizeUpbitCandles", () => {
         null,
         {
           candle_date_time_kst: "2026-06-01T09:00:00",
-          opening_price: "100",
+          opening_price: "not-a-number",
           high_price: 120,
           low_price: 90,
           trade_price: 110,
@@ -76,6 +76,30 @@ describe("normalizeUpbitCandles", () => {
         },
       ]),
     ).toEqual([]);
+  });
+
+  it("accepts string-typed numeric fields from SDK responses", () => {
+    expect(
+      normalizeUpbitCandles([
+        {
+          candle_date_time_kst: "2026-06-01T09:00:00",
+          opening_price: "100",
+          high_price: "120",
+          low_price: "90",
+          trade_price: "110",
+          candle_acc_trade_volume: "42",
+        },
+      ]),
+    ).toEqual([
+      {
+        time: "2026-06-01",
+        open: 100,
+        high: 120,
+        low: 90,
+        close: 110,
+        volume: 42,
+      },
+    ]);
   });
 });
 

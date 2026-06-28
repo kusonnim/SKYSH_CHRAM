@@ -14,8 +14,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
+function isNumeric(value: unknown): boolean {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string" && value.trim() !== "") return Number.isFinite(Number(value));
+  return false;
 }
 
 export function normalizeUpbitCandles(rawCandles: unknown[]): Candle[] {
@@ -26,20 +28,20 @@ export function normalizeUpbitCandles(rawCandles: unknown[]): Candle[] {
       (rawCandle) =>
         typeof (rawCandle.candle_date_time_kst ?? rawCandle.candle_date_time_utc) ===
           "string" &&
-        isFiniteNumber(rawCandle.opening_price) &&
-        isFiniteNumber(rawCandle.high_price) &&
-        isFiniteNumber(rawCandle.low_price) &&
-        isFiniteNumber(rawCandle.trade_price) &&
-        isFiniteNumber(rawCandle.candle_acc_trade_volume),
+        isNumeric(rawCandle.opening_price) &&
+        isNumeric(rawCandle.high_price) &&
+        isNumeric(rawCandle.low_price) &&
+        isNumeric(rawCandle.trade_price) &&
+        isNumeric(rawCandle.candle_acc_trade_volume),
     )
     .map((rawCandle) => ({
       time: ((rawCandle.candle_date_time_kst ??
         rawCandle.candle_date_time_utc) as string).split("T")[0],
-      open: rawCandle.opening_price as number,
-      high: rawCandle.high_price as number,
-      low: rawCandle.low_price as number,
-      close: rawCandle.trade_price as number,
-      volume: rawCandle.candle_acc_trade_volume as number,
+      open: Number(rawCandle.opening_price),
+      high: Number(rawCandle.high_price),
+      low: Number(rawCandle.low_price),
+      close: Number(rawCandle.trade_price),
+      volume: Number(rawCandle.candle_acc_trade_volume),
     }));
 }
 
