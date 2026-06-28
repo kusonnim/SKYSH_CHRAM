@@ -33,8 +33,8 @@ export function normalizeUpbitCandles(rawCandles: unknown[]): Candle[] {
         isFiniteNumber(rawCandle.candle_acc_trade_volume),
     )
     .map((rawCandle) => ({
-      time: (rawCandle.candle_date_time_kst ??
-        rawCandle.candle_date_time_utc) as string,
+      time: ((rawCandle.candle_date_time_kst ??
+        rawCandle.candle_date_time_utc) as string).split("T")[0],
       open: rawCandle.opening_price as number,
       high: rawCandle.high_price as number,
       low: rawCandle.low_price as number,
